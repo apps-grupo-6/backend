@@ -36,7 +36,6 @@ def login(model, request_id):
     }
 
     token = jwt.encode(payload, AuthConfig.jwt_secret, algorithm=AuthConfig.jwt_algorithm)
-
     g.response_code = "0200"
     return {
         "code": "0200",
