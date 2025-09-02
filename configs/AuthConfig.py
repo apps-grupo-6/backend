@@ -7,7 +7,7 @@ if config.get('Auth', 'enabled') == "1":
 
 login_code_map = {
     "0200": "ok",
-    "0204": "no data",
+    "0204": "invalid username",
     "0400": "bad request",
     "0410": "username or password are incorrect",
     "0500": "the request could not be processed"
@@ -15,8 +15,9 @@ login_code_map = {
 
 login_otp_code_map = {
     "0200": "ok",
-    "0204": "no data",
+    "0204": "invalid username or otp_token",
     "0400": "bad request",
-    "0410": "username or password are incorrect",
-    "0500": "the request could not be processed"
+    "0410": "otp_token expired",
+    "0500": "the request could not be processed",
+    "0501": "the request could not be processed"
 }
