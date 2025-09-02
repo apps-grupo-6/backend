@@ -26,11 +26,11 @@ def login(final_response, conn, cursor, username, request_id):
 def login_otp(final_response, conn, cursor, user_id, otp_token, request_id):
     try:
         query = """
-            SELECT 1
-            FROM users
+            SELECT expires_at
+            FROM otp_tokens
             WHERE 
                 user_id = %s
-                AND otp_token = %s
+                AND token = %s
             LIMIT 1;
         """
         values = (user_id, otp_token)
