@@ -37,7 +37,6 @@ except:
 try:
     logger.info("Connecting to email api")
 
-    # Configurar la API key
     API_KEY = config.get("Email", "api_key")
     SENDER_NAME = config.get("Email", "sender_name")
     SENDER_EMAIL = config.get("Email", "sender_email")
