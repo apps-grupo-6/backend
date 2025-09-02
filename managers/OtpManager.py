@@ -40,3 +40,20 @@ def create_otp(final_response, conn, cursor, user_id, otp_token, request_id):
         final_response["ok"] = False
 
     return final_response
+
+@with_db_connection
+def delete_otp(final_response, conn, cursor, user_id, otp_token, request_id):
+    try:
+        query = """
+            DELETE FROM otp_tokens
+            WHERE user_id = %s AND token = %s
+        """
+        values = (user_id, otp_token)
+
+        cursor.execute(query, values)
+        conn.commit()
+    except:
+        logger.exception(f"{request_id} - an error occurred while deleting the otp_token")
+        final_response["ok"] = False
+
+    return final_response
