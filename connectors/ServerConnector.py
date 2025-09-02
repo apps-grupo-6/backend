@@ -33,7 +33,7 @@ def send_email(email, request_id):
                 logger.error(f"{request_id} - {e}")
                 return
 
-        # 2. Enviar el correo
+        # 2. Sending email
         email = SendSmtpEmail(
             to=[{"email": user_email, "name": user_first_name}],
             subject=email["subject"],
@@ -43,7 +43,7 @@ def send_email(email, request_id):
 
         try:
             response = email_api.send_transac_email(email)
-            logger.info(f"Email enviado a {user_email}. ID: {response['message_id']}")
+            logger.info(f"Email sent to {user_email}. ID: {response['message_id']}")
         except ApiException as e:
             print(f"Error al enviar el correo: {e}")
 
