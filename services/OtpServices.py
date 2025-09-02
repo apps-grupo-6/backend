@@ -3,7 +3,7 @@ from flask import g
 from random import shuffle
 import datetime
 
-from managers import OtpManager
+from managers import OtpManager, UsersManager
 from configs import OtpConfig
 
 def create_otp(model, request_id):
@@ -20,7 +20,7 @@ def create_otp(model, request_id):
     if checked["data"]:
         logger.info(f"{request_id} - the user already has an otp")
 
-        if checked["data"]["expires_at"] >= datetime.datetime.utcnow():
+        if checked["data"]["expires_at"] >= datetime.datetime.now():
             logger.info(f"{request_id} - user's otp_token is not expired, it's not required to proceed")
             g.response_code = "0410"
             return {"code": "0410", "description": OtpConfig.create_otp_code_map["0410"]}, 400
@@ -41,10 +41,27 @@ def create_otp(model, request_id):
         g.response_code = "0501"
         return {"code": "0501", "description": OtpConfig.create_otp_code_map["0501"]}, 500
 
-    g.notification_data = {
+    logger.info(f"{request_id} - getting user contact email...")
+    get_user_contact_information = UsersManager.get_user_contact_information(user_id=user_id,
+                                                                             request_id=request_id)
+
+    if not get_user_contact_information["ok"]:
+        logger.critical(f"{request_id} - database failed while consulting user's email")
+        g.response_code = "0502"
+        return {"code": "0502", "description": OtpConfig.create_otp_code_map["0502"]}, 500
+
+    if not get_user_contact_information["data"]:
+        logger.critical(f"{request_id} - invalid user_id")
+        g.response_code = "0502"
+        return {"code": "0502", "description": OtpConfig.create_otp_code_map["0502"]}, 500
+
+    """g.send_email_data = {
         "subject": "Código de inicio de sesión para Excuses 404",
-        "message": f"Se detectó un intento de inicio de sesión de tu cuenta. \nEn caso de haber sido vos, ingresa el siguiente código: {otp_token}\n\nEn caso de no haber sido vos, por favor cambia la contraseña inmediatamente.\n\nAtentamente, el equipo de Excuses 404"
-    }
+        "otp_token": otp_token,
+        "user_email": get_user_contact_information["data"]["contact_email"],
+        "user_firstname": get_user_contact_information["data"]["first_name"],
+        "user_lastname": get_user_contact_information["data"]["last_name"]
+    }"""
 
     g.response_code = "0200"
     return {

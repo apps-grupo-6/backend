@@ -3,6 +3,7 @@ from datetime import datetime
 
 from configs.ServerConfig import run_check, logger
 from controllers import AuthController, UsersController, OtpController
+from connectors import ServerConnector
 
 app = Flask(__name__)
 
@@ -15,13 +16,14 @@ CONTROLLERS_BP = {
 @app.before_request
 def before_request():
     g.request_id = datetime.now().strftime("%Y%m%d%H%M%S%f")
-    g.notification_data = {}
+    g.send_email_data = {}
     g.response_code = "-1"
+    g.next_endpoint = ""
 
 @app.after_request
 def after_request(response):
-    if g.notification_data:
-        ...
+    if g.send_email_data:
+        ServerConnector.send_email(email=g.send_email_data, request_id=g.request_id)
 
     if response.content_type == 'application/json':
         original_data = response.get_json()

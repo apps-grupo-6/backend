@@ -1,6 +1,6 @@
 from pathlib import Path
 from psycopg2 import pool
-import configparser, logging
+import configparser, logging, sib_api_v3_sdk
 
 BASE_DIR = Path(__file__).parent.parent
 CONFIG_PATH = BASE_DIR / "properties" / ".env"
@@ -33,6 +33,18 @@ try:
 except:
     logger.exception("Database connection failed")
     connection_pool = None
+
+try:
+    logger.info("Connecting to email api")
+
+    # Configurar la API key
+    API_KEY = config.get("Email", "api_key")
+    SENDER_NAME = config.get("Email", "sender_name")
+    SENDER_EMAIL = config.get("Email", "sender_email")
+    email_configuration = sib_api_v3_sdk.Configuration()
+    email_configuration.api_key['api-key'] = API_KEY
+except:
+    logger.exception("Email api connection failed")
 
 run_check = [
     f"auth={config.get('Auth', 'enabled')}",
