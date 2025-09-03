@@ -131,3 +131,39 @@ def finish_class(model, request_id):
         "description": ClassesConfig.finish_class_code_map["0200"]
     }, 200
 
+def update_class(model, request_id):
+    class_id = model["class_id"]
+    qr = model["qr"]
+
+    logger.info(f"{request_id} - an update was requested for class '{class_id}'")
+    columns = []
+    values = []
+    for key in model:
+        if model[key] and key not in ["class_id", "qr"]:
+            logger.info(f"{request_id} - '{key}' was sent to update")
+            columns.append(f"{key} = %s")
+            values.append(model[key])
+
+    if not columns:
+        logger.error(f"{request_id} - all updatable fields are empty")
+        g.response_code = "0410"
+        return {"code": "0410", "description": ClassesConfig.update_class_code_map["0410"]}, 400
+
+    update_columns = " AND ".join(columns)
+    values.append(class_id)
+    logger.info(update_columns)
+
+    updated = ClassesManager.update_class(update_columns=update_columns,
+                                          update_values=values,
+                                          request_id=request_id)
+    if not updated["ok"]:
+        logger.critical(f"{request_id} - there was an error while updating")
+        g.response_code = "0500"
+        return {"code": "0500", "description": ClassesConfig.update_class_code_map["0500"]}, 500
+
+
+    g.response_code = "0200"
+    return {
+        "code": "0200",
+        "description": ClassesConfig.update_class_code_map["0200"]
+    }, 200

@@ -47,3 +47,24 @@ def finish_class(id):
 
     logger.info(f"{g.request_id} - finished mandatory fields check")
     return ClassesService.finish_class(model=model, request_id=g.request_id)
+
+@bp.put("/<int:id>")
+@AuthUtils.jwt_token_required
+def update_class(id):
+    try:
+        logger.info(f"{g.request_id} - starting update_class")
+        logger.info(f"{g.request_id} - starting mandatory fields check")
+
+        data = request.json
+        data["class_id"] = id
+        model = ClassesModel.update_class().load(data)
+    except ValidationError as e:
+        logger.exception(f"{g.request_id} - there are absent mandatory fields")
+        g.response_code = "0400"
+        return {"code": "0400",
+                "description": ClassesConfig.update_class_code_map["0400"],
+                "detailed_description": e.messages
+        }, 400
+
+    logger.info(f"{g.request_id} - finished mandatory fields check")
+    return ClassesService.update_class(model=model, request_id=g.request_id)

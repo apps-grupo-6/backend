@@ -77,3 +77,21 @@ def finish_class(final_response, conn, cursor, class_id, request_id):
         final_response["ok"] = False
 
     return final_response
+
+@with_db_connection
+def update_class(final_response, conn, cursor, update_columns, new_values, request_id):
+    try:
+        query = f"""
+            UPDATE classes
+            SET {update_columns}
+            WHERE id = %s
+        """
+        values = new_values
+
+        cursor.execute(query, values)
+        conn.commit()
+    except:
+        logger.exception(f"{request_id} - an error occurred while trying to finish this class")
+        final_response["ok"] = False
+
+    return final_response
