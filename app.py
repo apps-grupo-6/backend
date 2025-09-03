@@ -2,7 +2,7 @@ from flask import Flask, g, jsonify
 from datetime import datetime
 
 from configs.ServerConfig import run_check, logger
-from controllers import AuthController, UsersController, OtpController
+from controllers import AuthController, UsersController, OtpController, ClassesController
 from connectors import ServerConnector
 
 app = Flask(__name__)
@@ -10,7 +10,8 @@ app = Flask(__name__)
 CONTROLLERS_BP = {
     "auth": AuthController.bp,
     "users": UsersController.bp,
-    "otp": OtpController.bp
+    "otp": OtpController.bp,
+    "classes": ClassesController.bp
 }
 
 @app.before_request

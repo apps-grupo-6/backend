@@ -48,5 +48,6 @@ except:
 run_check = [
     f"auth={config.get('Auth', 'enabled')}",
     f"users={config.get('Users', 'enabled')}",
-    f"otp={config.get('Otp', 'enabled')}"
+    f"otp={config.get('Otp', 'enabled')}",
+    f"classes={config.get('Classes', 'enabled')}"
 ]
