@@ -73,7 +73,7 @@ def finish_class(final_response, conn, cursor, class_id, request_id):
         cursor.execute(query, values)
         conn.commit()
     except:
-        logger.exception(f"{request_id} - an error occurred while trying to check if class exists")
+        logger.exception(f"{request_id} - an error occurred while trying to finish this class")
         final_response["ok"] = False
 
     return final_response
