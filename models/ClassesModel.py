@@ -13,5 +13,6 @@ class create_class(Schema):
 
 class finish_class(Schema):
     class_id = fields.Integer(required=True, validate=validate.Range(min=1))
+
     class Meta:
         unknown = 'exclude'
