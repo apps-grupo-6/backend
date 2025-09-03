@@ -45,7 +45,7 @@ def create_class(final_response, conn, cursor, professor_id, location_id, discip
 def does_class_exist(final_response, conn, cursor, class_id, request_id):
     try:
         query = """
-            SELECT ended_at
+            SELECT 1
             FROM classes
             WHERE id = %s
             LIMIT 1;
@@ -79,19 +79,38 @@ def finish_class(final_response, conn, cursor, class_id, request_id):
     return final_response
 
 @with_db_connection
-def update_class(final_response, conn, cursor, update_columns, new_values, request_id):
+def update_class(final_response, conn, cursor, update_columns, update_values, request_id):
     try:
         query = f"""
             UPDATE classes
             SET {update_columns}
             WHERE id = %s
         """
-        values = new_values
+        values = update_values
 
         cursor.execute(query, values)
         conn.commit()
     except:
         logger.exception(f"{request_id} - an error occurred while trying to finish this class")
+        final_response["ok"] = False
+
+    return final_response
+
+@with_db_connection
+def get_class_info(final_response, conn, cursor, class_id, request_id):
+    try:
+        query = """
+            SELECT professor_id, location_id, discipline_id, scheduled_at, ended_at, max_participants
+            FROM classes
+            WHERE id = %s
+            LIMIT 1;
+        """
+        values = (class_id,)
+
+        cursor.execute(query, values)
+        final_response["data"] = cursor.fetchone()
+    except:
+        logger.exception(f"{request_id} - an error occurred while trying to check if class exists")
         final_response["ok"] = False
 
     return final_response

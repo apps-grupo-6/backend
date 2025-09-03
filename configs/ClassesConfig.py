@@ -27,5 +27,7 @@ update_class_code_map = {
     "0200": "ok",
     "0400": "bad request",
     "0410": "all updatable fields are empty",
-    "0500": "the request could not be processed"
+    "0411": "invalid class_id",
+    "0500": "the request could not be processed",
+    "0501": "the request could not be processed"
 }

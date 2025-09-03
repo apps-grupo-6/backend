@@ -113,7 +113,8 @@ def finish_class(model, request_id):
         g.response_code = "0410"
         return {"code": "0410", "description": ClassesConfig.finish_class_code_map["0410"]}, 400
 
-    if class_exist["data"]["ended_at"]:
+    get_info = ClassesManager.get_class_info(class_id=class_id, request_id=request_id)
+    if get_info["data"]["ended_at"]:
         logger.info(f"{request_id} - class '{class_id}' is already finished")
         g.response_code = "0411"
         return {"code": "0411", "description": ClassesConfig.finish_class_code_map["0411"]}, 400
@@ -140,7 +141,7 @@ def update_class(model, request_id):
     values = []
     for key in model:
         if model[key] and key not in ["class_id", "qr"]:
-            logger.info(f"{request_id} - '{key}' was sent to update")
+            logger.info(f"{request_id} - '{key}' was sent to update with value '{model[key]}'")
             columns.append(f"{key} = %s")
             values.append(model[key])
 
@@ -149,19 +150,29 @@ def update_class(model, request_id):
         g.response_code = "0410"
         return {"code": "0410", "description": ClassesConfig.update_class_code_map["0410"]}, 400
 
-    update_columns = " AND ".join(columns)
-    values.append(class_id)
-    logger.info(update_columns)
+    logger.info(f"{request_id} - validating if class_id '{class_id}' exists...")
+    class_exist = ClassesManager.does_class_exist(class_id=class_id, request_id=request_id)
+    if not class_exist["ok"]:
+        logger.critical(f"{request_id} - there was an error while checking")
+        g.response_code = "0500"
+        return {"code": "0500", "description": ClassesConfig.update_class_code_map["0500"]}, 500
 
+    if not class_exist["data"]:
+        logger.critical(f"{request_id} - invalid class_id")
+        g.response_code = "0411"
+        return {"code": "0411", "description": ClassesConfig.update_class_code_map["0411"]}, 400
+
+    update_columns = ", ".join(columns)
+    values.append(class_id)
     updated = ClassesManager.update_class(update_columns=update_columns,
                                           update_values=values,
                                           request_id=request_id)
     if not updated["ok"]:
         logger.critical(f"{request_id} - there was an error while updating")
-        g.response_code = "0500"
-        return {"code": "0500", "description": ClassesConfig.update_class_code_map["0500"]}, 500
+        g.response_code = "0501"
+        return {"code": "0501", "description": ClassesConfig.update_class_code_map["0501"]}, 500
 
-
+    logger.info(f"{request_id} - class updated successfully")
     g.response_code = "0200"
     return {
         "code": "0200",
