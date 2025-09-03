@@ -5,6 +5,7 @@ import datetime
 
 from managers import OtpManager, UsersManager
 from configs import OtpConfig
+from templates import OtpTemplate
 
 def create_otp(model, request_id):
     user_id = model["user_id"]
@@ -55,13 +56,14 @@ def create_otp(model, request_id):
         g.response_code = "0502"
         return {"code": "0502", "description": OtpConfig.create_otp_code_map["0502"]}, 500
 
-    """g.send_email_data = {
+    g.send_email_data = {
         "subject": "Código de inicio de sesión para Excuses 404",
         "otp_token": otp_token,
         "user_email": get_user_contact_information["data"]["contact_email"],
         "user_firstname": get_user_contact_information["data"]["first_name"],
-        "user_lastname": get_user_contact_information["data"]["last_name"]
-    }"""
+        "user_lastname": get_user_contact_information["data"]["last_name"],
+        "html_content": OtpTemplate.render_otp_email(otp_code=otp_token)
+    }
 
     g.response_code = "0200"
     return {
