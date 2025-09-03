@@ -5,7 +5,7 @@ from configs.ServerConfig import logger
 from models import AuthModel
 from configs import AuthConfig
 from services import AuthService
-from utils.AuthUtils import jwt_token_required
+from utils import AuthUtils
 
 bp = Blueprint('auth', __name__)
 
@@ -29,7 +29,7 @@ def login():
     return AuthService.login(model=model, request_id=g.request_id)
 
 @bp.post("/otp")
-@jwt_token_required
+@AuthUtils.jwt_token_required
 def login_otp():
     try:
         logger.info(f"{g.request_id} - starting login_otp")
