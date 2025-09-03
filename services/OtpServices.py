@@ -31,7 +31,7 @@ def create_otp(model, request_id):
     temp = list(request_id[:6])
     shuffle(temp)
     otp_token = "".join(temp)
-    logger.info(f"{request_id} - generated OTP '{otp_token}'")
+    logger.info(f"{request_id} - generated OTP: '{otp_token}'")
 
     otp_token_saved = OtpManager.create_otp(otp_token=otp_token,
                                             user_id=user_id,
@@ -68,7 +68,5 @@ def create_otp(model, request_id):
     g.response_code = "0200"
     return {
         "code": "0200",
-        "data": {
-            "otp_token": otp_token
-        }
+        "description": OtpConfig.create_otp_code_map["0200"]
     }, 200
