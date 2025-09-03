@@ -2,6 +2,7 @@ from flask import Blueprint, g, request
 from marshmallow import ValidationError
 from configs.ServerConfig import logger
 from utils import AuthUtils
+
 bp = Blueprint('classes', __name__)
 
 from configs import ClassesConfig
