@@ -115,7 +115,7 @@ def finish_class(model, request_id):
 
     get_info = ClassesManager.get_class_info(class_id=class_id, request_id=request_id)
     if get_info["data"]["ended_at"]:
-        logger.info(f"{request_id} - class '{class_id}' is already finished")
+        logger.info(f"{request_id} - this class is already finished")
         g.response_code = "0411"
         return {"code": "0411", "description": ClassesConfig.finish_class_code_map["0411"]}, 400
 
