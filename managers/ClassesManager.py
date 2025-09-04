@@ -110,7 +110,7 @@ def get_class_info(final_response, conn, cursor, class_id, request_id):
         cursor.execute(query, values)
         final_response["data"] = cursor.fetchone()
     except:
-        logger.exception(f"{request_id} - an error occurred while trying to check if class exists")
+        logger.exception(f"{request_id} - an error occurred while trying to obtain class information")
         final_response["ok"] = False
 
     return final_response

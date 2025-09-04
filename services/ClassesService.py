@@ -113,7 +113,13 @@ def finish_class(model, request_id):
         g.response_code = "0410"
         return {"code": "0410", "description": ClassesConfig.finish_class_code_map["0410"]}, 400
 
+    logger.info(f"{request_id} - obtaining class_id information to check if finished...")
     get_info = ClassesManager.get_class_info(class_id=class_id, request_id=request_id)
+    if not get_info["ok"]:
+        logger.critical(f"{request_id} - there was an error while obtaining")
+        g.response_code = "0501"
+        return {"code": "0501", "description": ClassesConfig.finish_class_code_map["0501"]}, 500
+
     if get_info["data"]["ended_at"]:
         logger.info(f"{request_id} - this class is already finished")
         g.response_code = "0411"
@@ -122,9 +128,9 @@ def finish_class(model, request_id):
     logger.info(f"{request_id} - finishing class...")
     finished_class = ClassesManager.finish_class(class_id=class_id, request_id=request_id)
     if not finished_class["ok"]:
-        logger.critical(f"{request_id} - there was an error while checking")
-        g.response_code = "0501"
-        return {"code": "0501", "description": ClassesConfig.finish_class_code_map["0501"]}, 500
+        logger.critical(f"{request_id} - there was an error while updating")
+        g.response_code = "0502"
+        return {"code": "0502", "description": ClassesConfig.finish_class_code_map["0502"]}, 500
 
     logger.info(f"{request_id} - class finished successfully")
     g.response_code = "0200"
