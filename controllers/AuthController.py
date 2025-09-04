@@ -40,9 +40,10 @@ def login_otp():
     except ValidationError as e:
         logger.exception(f"{g.request_id} - there are absent mandatory fields")
         g.response_code = "0400"
-        return {"code": "0400",
-                "description": AuthConfig.login_otp_code_map["0400"],
-                "detailed_description": e.messages
+        return {
+            "code": "0400",
+            "description": AuthConfig.login_otp_code_map["0400"],
+            "detailed_description": e.messages
         }, 400
 
     logger.info(f"{g.request_id} - finished mandatory fields check")

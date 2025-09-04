@@ -21,9 +21,10 @@ def create_class():
     except ValidationError as e:
         logger.exception(f"{g.request_id} - there are absent mandatory fields")
         g.response_code = "0400"
-        return {"code": "0400",
-                "description": ClassesConfig.create_class_code_map["0400"],
-                "detailed_description": e.messages
+        return {
+            "code": "0400",
+            "description": ClassesConfig.create_class_code_map["0400"],
+            "detailed_description": e.messages
         }, 400
 
     logger.info(f"{g.request_id} - finished mandatory fields check")
@@ -41,9 +42,10 @@ def finish_class(id):
     except ValidationError as e:
         logger.exception(f"{g.request_id} - there are absent mandatory fields")
         g.response_code = "0400"
-        return {"code": "0400",
-                "description": ClassesConfig.finish_class_code_map["0400"],
-                "detailed_description": e.messages
+        return {
+            "code": "0400",
+            "description": ClassesConfig.finish_class_code_map["0400"],
+            "detailed_description": e.messages
         }, 400
 
     logger.info(f"{g.request_id} - finished mandatory fields check")
@@ -62,9 +64,10 @@ def update_class(id):
     except ValidationError as e:
         logger.exception(f"{g.request_id} - there are absent mandatory fields")
         g.response_code = "0400"
-        return {"code": "0400",
-                "description": ClassesConfig.update_class_code_map["0400"],
-                "detailed_description": e.messages
+        return {
+            "code": "0400",
+            "description": ClassesConfig.update_class_code_map["0400"],
+            "detailed_description": e.messages
         }, 400
 
     logger.info(f"{g.request_id} - finished mandatory fields check")
