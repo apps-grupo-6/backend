@@ -19,6 +19,7 @@ finish_class_code_map = {
     "0400": "bad request",
     "0410": "invalid class_id",
     "0411": "the class_id is already finished",
+    "0412": "there is no difference between sent qr and the actual one",
     "0500": "the request could not be processed",
     "0501": "the request could not be processed",
     "0502": "the request could not be processed"
@@ -30,5 +31,6 @@ update_class_code_map = {
     "0410": "all updatable fields are empty",
     "0411": "invalid class_id",
     "0500": "the request could not be processed",
-    "0501": "the request could not be processed"
+    "0501": "the request could not be processed",
+    "0502": "the request could not be processed"
 }

@@ -169,6 +169,18 @@ def update_class(model, request_id):
         g.response_code = "0411"
         return {"code": "0411", "description": ClassesConfig.update_class_code_map["0411"]}, 400
 
+    logger.info(f"{request_id} - obtaining class_id information to check it's qr...")
+    get_info = ClassesManager.get_class_info(class_id=class_id, request_id=request_id)
+    if not get_info["ok"]:
+        logger.critical(f"{request_id} - there was an error while obtaining")
+        g.response_code = "0501"
+        return {"code": "0501", "description": ClassesConfig.finish_class_code_map["0501"]}, 500
+
+    if get_info["data"]["qr"] == qr:
+        logger.info(f"{request_id} - sent qr is equal to actual class qr (if equal, there's no new data)")
+        g.response_code = "0412"
+        return {"code": "0412", "description": ClassesConfig.finish_class_code_map["0412"]}, 400
+
     logger.info(f"{request_id} - updating class...")
     update_columns = ", ".join(columns)
     values.append(class_id)
@@ -177,8 +189,8 @@ def update_class(model, request_id):
                                           request_id=request_id)
     if not updated["ok"]:
         logger.critical(f"{request_id} - there was an error while updating")
-        g.response_code = "0501"
-        return {"code": "0501", "description": ClassesConfig.update_class_code_map["0501"]}, 500
+        g.response_code = "0502"
+        return {"code": "0502", "description": ClassesConfig.update_class_code_map["0502"]}, 500
 
     logger.info(f"{request_id} - class updated successfully")
     g.response_code = "0200"
