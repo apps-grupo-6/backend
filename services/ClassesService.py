@@ -78,7 +78,7 @@ def create_class(model, request_id):
             g.response_code = "0413"
             return {"code": "0413", "description": ClassesConfig.create_class_code_map["0413"]}, 400
 
-    logger.info(f"{request_id} - creating class..")
+    logger.info(f"{request_id} - creating class...")
     created = ClassesManager.create_class(qr=qr,
                                           professor_id=professor_id,
                                           location_id=location_id,
@@ -101,7 +101,7 @@ def create_class(model, request_id):
 def finish_class(model, request_id):
     class_id = model["class_id"]
 
-    logger.info(f"{request_id} - validating if class_id '{class_id}' exists...")
+    logger.info(f"{request_id} - checking if class_id '{class_id}' exists...")
     class_exist = ClassesManager.does_class_exist(class_id=class_id, request_id=request_id)
     if not class_exist["ok"]:
         logger.critical(f"{request_id} - there was an error while checking")
@@ -119,6 +119,7 @@ def finish_class(model, request_id):
         g.response_code = "0411"
         return {"code": "0411", "description": ClassesConfig.finish_class_code_map["0411"]}, 400
 
+    logger.info(f"{request_id} - finishing class...")
     finished_class = ClassesManager.finish_class(class_id=class_id, request_id=request_id)
     if not finished_class["ok"]:
         logger.critical(f"{request_id} - there was an error while checking")
@@ -150,7 +151,7 @@ def update_class(model, request_id):
         g.response_code = "0410"
         return {"code": "0410", "description": ClassesConfig.update_class_code_map["0410"]}, 400
 
-    logger.info(f"{request_id} - validating if class_id '{class_id}' exists...")
+    logger.info(f"{request_id} - checking if this class_id exists...")
     class_exist = ClassesManager.does_class_exist(class_id=class_id, request_id=request_id)
     if not class_exist["ok"]:
         logger.critical(f"{request_id} - there was an error while checking")
@@ -162,6 +163,7 @@ def update_class(model, request_id):
         g.response_code = "0411"
         return {"code": "0411", "description": ClassesConfig.update_class_code_map["0411"]}, 400
 
+    logger.info(f"{request_id} - updating class...")
     update_columns = ", ".join(columns)
     values.append(class_id)
     updated = ClassesManager.update_class(update_columns=update_columns,
