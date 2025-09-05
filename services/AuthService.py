@@ -24,6 +24,7 @@ def login(model, request_id):
         logger.critical(f"{request_id} - invalid username")
         return {"code": "0204", "description": AuthConfig.login_code_map["0204"]}, 204
 
+    logger.info(f"{request_id} - checking password...")
     if not UsersUtils.verify_password(plain_password=password,
                                       hashed_password=get_user_info["data"]["password"]):
         g.response_code = "0410"
@@ -35,7 +36,10 @@ def login(model, request_id):
         "exp": datetime.datetime.utcnow() + datetime.timedelta(seconds=AuthConfig.jwt_exp_delta_seconds)
     }
 
+    logger.info(f"{request_id} - generating token...")
     token = jwt.encode(payload, AuthConfig.jwt_secret, algorithm=AuthConfig.jwt_algorithm)
+
+    logger.info(f"{request_id} - first step login was done successfully")
     g.response_code = "0200"
     return {
         "code": "0200",
