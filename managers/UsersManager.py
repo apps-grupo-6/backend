@@ -36,3 +36,22 @@ def get_user_contact_information(final_response, conn, cursor, user_id, request_
         final_response["ok"] = False
 
     return final_response
+
+@with_db_connection
+def does_user_exist(final_response, conn, cursor, user_id, request_id):
+    try:
+        query = """
+            SELECT 1
+            FROM users
+            WHERE id = %s
+            LIMIT 1;
+        """
+        values = (user_id,)
+
+        cursor.execute(query, values)
+        final_response["data"] = cursor.fetchone()
+    except:
+        logger.exception(f"{request_id} - an error occurred while trying to check if user exists")
+        final_response["ok"] = False
+
+    return final_response
