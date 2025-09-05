@@ -147,7 +147,7 @@ def update_class(model, request_id):
     columns = []
     values = []
     for key in model:
-        if model[key] and key not in ["class_id", "qr"]:
+        if model[key] and key != "class_id":
             logger.info(f"{request_id} - '{key}' was sent to update with value '{model[key]}'")
             columns.append(f"{key} = %s")
             values.append(model[key])
@@ -175,6 +175,8 @@ def update_class(model, request_id):
         logger.critical(f"{request_id} - there was an error while obtaining")
         g.response_code = "0501"
         return {"code": "0501", "description": ClassesConfig.finish_class_code_map["0501"]}, 500
+
+    logger.info(f"{request_id} - actual class data: {get_info['data']}")
 
     if get_info["data"]["qr"] == qr:
         logger.info(f"{request_id} - sent qr is equal to actual class qr (if equal, there's no new data)")
