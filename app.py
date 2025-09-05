@@ -1,4 +1,4 @@
-from flask import Flask, g, jsonify
+from flask import Flask, g, jsonify, request
 from datetime import datetime
 
 from configs.ServerConfig import run_check, logger
@@ -20,6 +20,10 @@ def before_request():
     g.send_email_data = {}
     g.response_code = "-1"
     g.next_endpoint = ""
+    g.begin_time = datetime.now()
+
+    logger.info(f"{g.request_id} - begin")
+    logger.info(f"{g.request_id} - request body: {request.json}")
 
 @app.after_request
 def after_request(response):
@@ -32,6 +36,8 @@ def after_request(response):
             original_data["request_id"] = g.get("request_id")
             response.set_data(jsonify(original_data).get_data())
 
+    g.end_time = datetime.now() - g.begin_time
+    logger.info(f"{g.request_id} - ended after {g.end_time.total_seconds()} seconds")
     return response
 
 @app.errorhandler(404)
