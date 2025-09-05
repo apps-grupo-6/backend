@@ -100,7 +100,7 @@ def update_class(final_response, conn, cursor, update_columns, update_values, re
 def get_class_info(final_response, conn, cursor, class_id, request_id):
     try:
         query = """
-            SELECT professor_id, location_id, discipline_id, scheduled_at, ended_at, max_participants
+            SELECT professor_id, location_id, discipline_id, scheduled_at, ended_at, max_participants, qr
             FROM classes
             WHERE id = %s
             LIMIT 1;
