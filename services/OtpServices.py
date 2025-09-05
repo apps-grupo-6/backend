@@ -27,6 +27,8 @@ def create_otp(model, request_id):
             return {"code": "0410", "description": OtpConfig.create_otp_code_map["0410"]}, 400
         else:
             logger.info(f"{request_id} - user's otp_token is expired, creating a new one...")
+    else:
+        logger.info(f"{request_id} - user does not have an active otp token")
 
     temp = list(request_id[:6])
     shuffle(temp)
