@@ -54,25 +54,25 @@ def login_otp(model, request_id):
     user_id = model["user_id"]
     otp_token = model["otp_token"]
 
-    logger.info(f"{request_id} - user_id '{user_id}' is trying to login with otp '{otp_token}'...")
+    logger.info(f"{request_id} - user_id '{user_id}' is trying to login with otp_token '{otp_token}'...")
     result = AuthManager.login_otp(user_id=user_id,
                                    otp_token=otp_token,
                                    request_id=request_id)
 
     if not result["ok"]:
         g.response_code = "0500"
-        logger.critical(f"{request_id} - database failed when this user tried to login with otp")
+        logger.critical(f"{request_id} - database failed when this user tried to login with otp_token")
         return {"code": "0500", "description": AuthConfig.login_otp_code_map["0500"]}, 500
 
     if not result["data"]:
-        g.response_code = "0204"
-        logger.critical(f"{request_id} - invalid token or user_id")
-        return {"code": "0204", "description": AuthConfig.login_otp_code_map["0204"]}, 204
+        g.response_code = "0410"
+        logger.critical(f"{request_id} - invalid otp_token or user_id")
+        return {"code": "0410", "description": AuthConfig.login_otp_code_map["0410"]}, 400
 
     if result["data"]["expires_at"] < datetime.datetime.now():
         logger.info(f"{request_id} - user's otp_token is expired")
-        g.response_code = "0410"
-        return {"code": "0410", "description": AuthConfig.login_otp_code_map["0410"]}, 400
+        g.response_code = "0411"
+        return {"code": "0411", "description": AuthConfig.login_otp_code_map["0411"]}, 400
 
     logger.info(f"{request_id} - user's otp_token is valid, deleting used otp...")
     deleted = OtpManager.delete_otp(user_id=user_id,
