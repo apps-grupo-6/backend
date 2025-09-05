@@ -148,7 +148,6 @@ def update_class(model, request_id):
     values = []
     for key in model:
         if model[key] and key != "class_id":
-            logger.info(f"{request_id} - '{key}' was sent to update with value '{model[key]}'")
             columns.append(f"{key} = %s")
             values.append(model[key])
 
