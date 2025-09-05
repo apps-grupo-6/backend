@@ -42,6 +42,7 @@ try:
     SENDER_EMAIL = config.get("Email", "sender_email")
     email_configuration = sib_api_v3_sdk.Configuration()
     email_configuration.api_key['api-key'] = API_KEY
+    logger.info("Email api connection established")
 except:
     logger.exception("Email api connection failed")
 
@@ -49,5 +50,6 @@ run_check = [
     f"auth={config.get('Auth', 'enabled')}",
     f"users={config.get('Users', 'enabled')}",
     f"otp={config.get('Otp', 'enabled')}",
-    f"classes={config.get('Classes', 'enabled')}"
+    f"classes={config.get('Classes', 'enabled')}",
+    f"locations={config.get('Locations', 'enabled')}"
 ]

@@ -1,7 +1,7 @@
 from configs.ServerConfig import logger
 from flask import g
 
-from managers import LocationsManager
+from managers import LocationsManager, UsersManager
 from configs import LocationsConfig
 
 def create_location(model, request_id):
@@ -9,6 +9,18 @@ def create_location(model, request_id):
     country_code = model['country_code']
     city = model['city']
     address = model['address']
+
+    logger.info(f"{request_id} - validating if owner_id '{owner_id}' exists...")
+    user_exist = UsersManager.does_user_exist(user_id=owner_id, request_id=request_id)
+    if not user_exist["ok"]:
+        logger.critical(f"{request_id} - there was an error while checking")
+        g.response_code = "0500"
+        return {"code": "0500", "description": LocationsConfig.create_location_code_map["0500"]}, 500
+
+    if not user_exist["data"]:
+        logger.critical(f"{request_id} - invalid owner_id")
+        g.response_code = "0410"
+        return {"code": "0410", "description": LocationsConfig.create_location_code_map["0410"]}, 400
 
     logger.info(f"{request_id} - creating new location...")
     created = LocationsManager.create_location(owner_id=owner_id,
@@ -19,8 +31,8 @@ def create_location(model, request_id):
 
     if not created["ok"]:
         logger.critical(f"{request_id} - there was an error while creating")
-        g.response_code = "0500"
-        return {"code": "0500", "description": LocationsConfig.create_location_code_map["0500"]}, 500
+        g.response_code = "0501"
+        return {"code": "0501", "description": LocationsConfig.create_location_code_map["0501"]}, 500
 
     logger.info(f"{request_id} - location created successfully")
     g.response_code = "0200"

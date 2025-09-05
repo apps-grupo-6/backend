@@ -19,3 +19,20 @@ def does_location_exist(final_response, conn, cursor, location_id, request_id):
         final_response["ok"] = False
 
     return final_response
+
+@with_db_connection
+def create_location(final_response, conn, cursor, owner_id, country_code, city, address, request_id):
+    try:
+        query = """
+            INSERT INTO locations (owner_id, country_code, city, address, created_at)
+            VALUES (%s, %s, %s, %s, NOW())
+        """
+        values = (owner_id, country_code, city, address)
+
+        cursor.execute(query, values)
+        conn.commit()
+    except:
+        logger.exception(f"{request_id} - an error occurred while creating the location")
+        final_response["ok"] = False
+
+    return final_response
