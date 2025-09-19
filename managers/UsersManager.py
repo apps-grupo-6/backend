@@ -19,10 +19,10 @@ def register_account(final_response, conn, cursor, username, password, first_nam
     return final_response
 
 @with_db_connection
-def get_user_contact_information(final_response, conn, cursor, user_id, request_id):
+def get_user_information(final_response, conn, cursor, user_id, request_id):
     try:
         query = """
-            SELECT contact_email, first_name, last_name
+            SELECT contact_email, first_name, last_name, telephone
             FROM user_information
             WHERE user_id = %s
             LIMIT 1;

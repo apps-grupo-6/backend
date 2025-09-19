@@ -2,7 +2,7 @@ from configs.ServerConfig import logger
 from utils.DatabaseUtils import with_db_connection
 
 @with_db_connection
-def check_if_repeated(final_response, conn, cursor, professor_id, location_id, discipline_id, request_id):
+def check_if_duplicated(final_response, conn, cursor, professor_id, location_id, discipline_id, request_id):
     try:
         query = """
             SELECT scheduled_at, ended_at
@@ -97,7 +97,7 @@ def update_class(final_response, conn, cursor, update_columns, update_values, re
     return final_response
 
 @with_db_connection
-def get_class_info(final_response, conn, cursor, class_id, request_id):
+def get_class_information(final_response, conn, cursor, class_id, request_id):
     try:
         query = """
             SELECT professor_id, location_id, discipline_id, scheduled_at, ended_at, max_participants, qr

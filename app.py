@@ -1,9 +1,11 @@
+import awsgi
 from flask import Flask, g, jsonify, request
 from datetime import datetime
 
 from configs.ServerConfig import run_check, logger
 from controllers import AuthController, UsersController, OtpController, ClassesController, LocationsController
 from connectors import ServerConnector
+from repositories import ServerRepository
 
 app = Flask(__name__)
 
@@ -19,9 +21,12 @@ CONTROLLERS_BP = {
 def before_request():
     g.request_id = datetime.now().strftime("%Y%m%d%H%M%S%f")
     g.send_email_data = {}
-    g.response_code = "-1"
-    g.next_endpoint = ""
+    g.response_code = ""
+    g.description_code_map = {}
     g.begin_time = datetime.now()
+    g.user_id = -1
+    g.endpoint = ""
+    g.method = ""
 
     logger.info(f"{g.request_id} - begin")
     logger.info(f"{g.request_id} - request body: {request.json}")
@@ -33,12 +38,27 @@ def after_request(response):
 
     if response.content_type == 'application/json':
         original_data = response.get_json()
-        if original_data is not None:
-            original_data["request_id"] = g.get("request_id")
-            response.set_data(jsonify(original_data).get_data())
+        original_data["request_id"] = g.request_id
+
+        if not g.response_code == "0401": # if not related to jwt token, retrieve all related information
+            response_data = g.description_code_map[g.response_code]
+            original_data["code"] = g.response_code
+            original_data["description"] = response_data[0]
+            response.status_code = response_data[1]
+
+        response.set_data(jsonify(original_data).get_data())
 
     g.end_time = datetime.now() - g.begin_time
-    logger.info(f"{g.request_id} - ended after {g.end_time.total_seconds()} seconds")
+    end_time_seconds = g.end_time.total_seconds()
+    logger.info(f"{g.request_id} - ended after {end_time_seconds} seconds")
+
+    ServerRepository.create_request_log(request_id=g.request_id,
+                                        endpoint=g.endpoint,
+                                        method=g.method,
+                                        code=g.response_code,
+                                        user_id=g.user_id,
+                                        execution_time=end_time_seconds)
+
     return response
 
 @app.errorhandler(404)
@@ -52,6 +72,9 @@ def internal_error(error):
 @app.errorhandler(415)
 def internal_error(error):
     return {"error": "request body is empty"}, 415
+
+def lambda_handler(event, context):
+    return awsgi.response(app, event, context)
 
 if __name__ == "__main__":
     for check in run_check:

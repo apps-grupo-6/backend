@@ -24,13 +24,10 @@ def register_account(model, request_id):
                                                request_id=request_id)
 
     if not registered["ok"]:
-        g.response_code = "0500"
         logger.critical(f"{request_id} - database failed when trying register this user")
-        return {"code": "0500", "description": UsersConfig.register_account_code_map["0500"]}, 500
+        g.response_code = "0500"
+        return {}
 
     logger.info(f"{request_id} - username registered successfully")
     g.response_code = "0200"
-    return {
-        "code": "0200",
-        "description": UsersConfig.register_account_code_map["0200"]
-    }, 200
+    return {}

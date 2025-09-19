@@ -2,7 +2,7 @@ from configs.ServerConfig import logger
 from utils.DatabaseUtils import with_db_connection
 
 @with_db_connection
-def login(final_response, conn, cursor, username, request_id):
+def get_username_info(final_response, conn, cursor, username, request_id):
     try:
         query = """
             SELECT 
@@ -23,7 +23,7 @@ def login(final_response, conn, cursor, username, request_id):
     return final_response
 
 @with_db_connection
-def login_otp(final_response, conn, cursor, user_id, otp_token, request_id):
+def check_otp_token(final_response, conn, cursor, user_id, otp_token, request_id):
     try:
         query = """
             SELECT expires_at

@@ -2,7 +2,7 @@ from configs.ServerConfig import logger
 from utils.DatabaseUtils import with_db_connection
 
 @with_db_connection
-def check_otp(final_response, conn, cursor, user_id, request_id):
+def check_if_user_has_active_otp(final_response, conn, cursor, user_id, request_id):
     try:
         query = """
             SELECT expires_at
@@ -21,7 +21,7 @@ def check_otp(final_response, conn, cursor, user_id, request_id):
     return final_response
 
 @with_db_connection
-def create_otp(final_response, conn, cursor, user_id, otp_token, request_id):
+def save_otp(final_response, conn, cursor, user_id, otp_token, request_id):
     try:
         query = """
             INSERT INTO otp_tokens (user_id, token, expires_at)

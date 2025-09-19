@@ -8,7 +8,6 @@ class login(Schema):
         unknown = 'exclude'
 
 class login_otp(Schema):
-    user_id = fields.String(required=True, validate=validate.Length(min=1, max=50))
     otp_token = fields.String(required=True, validate=validate.Length(min=1, max=6))
 
     class Meta:
