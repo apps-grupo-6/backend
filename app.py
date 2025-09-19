@@ -24,7 +24,10 @@ def before_request():
     g.begin_time = datetime.now()
 
     logger.info(f"{g.request_id} - begin")
-    logger.info(f"{g.request_id} - request body: {request.json}")
+    if request.method in ['POST', 'PUT'] and request.is_json:
+        logger.info(f"{g.request_id} - request body: {request.json}")
+    else:
+        logger.info(f"{g.request_id} - request method: {request.method}")
 
 @app.after_request
 def after_request(response):
