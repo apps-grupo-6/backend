@@ -50,15 +50,16 @@ def after_request(response):
 
     g.end_time = datetime.now() - g.begin_time
     end_time_seconds = g.end_time.total_seconds()
+
+    if g.user_id != -1:
+        ServerRepository.create_request_log(request_id=g.request_id,
+                                            endpoint=g.endpoint,
+                                            method=g.method,
+                                            code=g.response_code,
+                                            user_id=g.user_id,
+                                            execution_time=end_time_seconds)
+
     logger.info(f"{g.request_id} - ended after {end_time_seconds} seconds")
-
-    ServerRepository.create_request_log(request_id=g.request_id,
-                                        endpoint=g.endpoint,
-                                        method=g.method,
-                                        code=g.response_code,
-                                        user_id=g.user_id,
-                                        execution_time=end_time_seconds)
-
     return response
 
 @app.errorhandler(404)

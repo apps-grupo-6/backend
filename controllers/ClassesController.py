@@ -33,21 +33,8 @@ def create_class():
 @AuthUtils.jwt_token_required
 @ServerUtils.configure_request(description_code_map=ClassesConfig.finish_class_code_map, method="PUT", endpoint="<id>/finish")
 def finish_class(id):
-    try:
-        logger.info(f"{g.request_id} - starting finish_class")
-        logger.info(f"{g.request_id} - starting mandatory fields check")
-
-        data = {"class_id": id}
-        model = ClassesModel.finish_class().load(data)
-    except ValidationError as e:
-        logger.exception(f"{g.request_id} - there are absent mandatory fields")
-        g.response_code = "0400"
-        return {
-            "detailed_description": e.messages
-        }
-
-    logger.info(f"{g.request_id} - finished mandatory fields check")
-    return ClassesService.finish_class(model=model, request_id=g.request_id)
+    logger.info(f"{g.request_id} - starting finish_class")
+    return ClassesService.finish_class(class_id=id, request_id=g.request_id)
 
 @bp.put("/<int:id>")
 @AuthUtils.jwt_token_required
@@ -58,7 +45,6 @@ def update_class(id):
         logger.info(f"{g.request_id} - starting mandatory fields check")
 
         data = request.json
-        data["class_id"] = id
         model = ClassesModel.update_class().load(data)
     except ValidationError as e:
         logger.exception(f"{g.request_id} - there are absent mandatory fields")
@@ -68,7 +54,7 @@ def update_class(id):
         }
 
     logger.info(f"{g.request_id} - finished mandatory fields check")
-    return ClassesService.update_class(model=model, request_id=g.request_id)
+    return ClassesService.update_class(model=model, class_id=id, request_id=g.request_id)
 
 @bp.get("/")
 @AuthUtils.jwt_token_required

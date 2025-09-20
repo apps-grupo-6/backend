@@ -84,9 +84,7 @@ def create_class(model, request_id):
     g.response_code = "0200"
     return {}
 
-def finish_class(model, request_id):
-    class_id = model["class_id"]
-
+def finish_class(class_id, request_id):
     class_information = ClassesUtils.check_and_get_class(class_id=class_id,
                                                          request_id=request_id,
                                                          error_code_maps={
@@ -98,7 +96,7 @@ def finish_class(model, request_id):
         return {}
 
     if class_information["data"]["ended_at"]:
-        logger.info(f"{request_id} - class already finished")
+        logger.error(f"{request_id} - class already finished")
         g.response_code = "0412"
         return {}
 
@@ -112,8 +110,7 @@ def finish_class(model, request_id):
     g.response_code = "0200"
     return {}
 
-def update_class(model, request_id):
-    class_id = model["class_id"]
+def update_class(model, class_id, request_id):
     qr = model["qr"]
     columns = []
     values = []

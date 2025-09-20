@@ -7,7 +7,12 @@ def configure_request(description_code_map, method="", endpoint=""):
         def wrapper(*args, **kwargs):
             g.method = method
             g.description_code_map = description_code_map
-            g.endpoint = f"/{func.__module__.split(".")[-1].replace("Controller", "").lower()}/{endpoint}"
+
+            final_endpoint = endpoint
+            if endpoint and "<id>" in endpoint:
+                final_endpoint = endpoint.replace("<id>", str(kwargs['id']))
+
+            g.endpoint = f"/{func.__module__.split(".")[-1].replace("Controller", "").lower()}/{final_endpoint}"
             return func(*args, **kwargs)
         return wrapper
     return decorator

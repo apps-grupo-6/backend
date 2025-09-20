@@ -11,14 +11,7 @@ class create_class(Schema):
     class Meta:
         unknown = 'exclude'
 
-class finish_class(Schema):
-    class_id = fields.Integer(required=True, validate=validate.Range(min=1))
-
-    class Meta:
-        unknown = 'exclude'
-
 class update_class(Schema):
-    class_id = fields.Integer(required=True, validate=validate.Range(min=1))
     professor_id = fields.String(required=False)
     location_id = fields.String(required=False)
     discipline_id = fields.String(required=False)

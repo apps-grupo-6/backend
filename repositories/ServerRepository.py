@@ -13,4 +13,4 @@ def create_request_log(request_id, user_id, method, endpoint, code, execution_ti
         logger.critical(f"{request_id} - an error occurred while creating the request log:")
         logger.info(f"request data: {request_id=} | {user_id=} | {method=} | {endpoint=} | {code=} | {execution_time=}")
     else:
-        logger.info(f"{request_id} - request log created successfully")
+        logger.debug(f"{request_id} - request log created successfully")
