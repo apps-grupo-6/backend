@@ -27,3 +27,8 @@ def register_account():
 
     logger.info(f"{g.request_id} - finished mandatory fields check")
     return UsersService.register_account(model=model, request_id=g.request_id)
+
+@bp.get("/<int:user_id>")
+def get_user_info(user_id):
+    logger.info(f"{g.request_id} - starting get_user_info for user_id: {user_id}")
+    return UsersService.get_user_info(user_id=user_id, request_id=g.request_id)

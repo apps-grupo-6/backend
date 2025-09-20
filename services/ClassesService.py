@@ -199,3 +199,23 @@ def update_class(model, request_id):
         "code": "0200",
         "description": ClassesConfig.update_class_code_map["0200"]
     }, 200
+
+
+def get_all_classes(request_id):
+    logger.info(f"{request_id} - getting all classes...")
+    
+    classes_result = ClassesManager.get_all_classes(request_id=request_id)
+    if not classes_result["ok"]:
+        logger.critical(f"{request_id} - there was an error while getting classes")
+        g.response_code = "0500"
+        return {"code": "0500", "description": "the request could not be processed"}, 500
+
+    classes_data = classes_result["data"] or []
+    
+    logger.info(f"{request_id} - found {len(classes_data)} classes")
+    g.response_code = "0200"
+    return {
+        "code": "0200",
+        "description": "ok",
+        "data": classes_data
+    }, 200

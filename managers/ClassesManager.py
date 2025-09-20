@@ -114,3 +114,38 @@ def get_class_info(final_response, conn, cursor, class_id, request_id):
         final_response["ok"] = False
 
     return final_response
+
+@with_db_connection
+def get_all_classes(final_response, conn, cursor, request_id):
+    try:
+        query = """
+            SELECT 
+                c.id,
+                u.username as professor_name,
+                ui.first_name as professor_first_name,
+                ui.last_name as professor_last_name,
+                c.location_id,
+                l.city,
+                l.address,
+                d.name as discipline_name,
+                c.scheduled_at,
+                c.max_participants,
+                c.status,
+                c.ended_at,
+                c.qr,
+                c.created_at
+            FROM classes c
+            LEFT JOIN users u ON c.professor_id = u.id
+            LEFT JOIN user_information ui ON u.id = ui.user_id
+            LEFT JOIN locations l ON c.location_id = l.id  
+            LEFT JOIN disciplines d ON c.discipline_id = d.id
+            ORDER BY c.scheduled_at DESC;
+        """
+        
+        cursor.execute(query)
+        final_response["data"] = cursor.fetchall()
+    except:
+        logger.exception(f"{request_id} - an error occurred while trying to get all classes")
+        final_response["ok"] = False
+
+    return final_response

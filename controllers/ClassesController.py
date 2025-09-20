@@ -9,6 +9,11 @@ from configs import ClassesConfig
 from models import ClassesModel
 from services import ClassesService
 
+@bp.get("/")
+def get_all_classes():
+    logger.info(f"{g.request_id} - starting get_all_classes")
+    return ClassesService.get_all_classes(request_id=g.request_id)
+
 @bp.post("/")
 @AuthUtils.jwt_token_required
 def create_class():
