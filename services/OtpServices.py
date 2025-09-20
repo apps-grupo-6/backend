@@ -26,7 +26,7 @@ def create_otp(user_id, request_id):
                                                                  "database_error_code": "0501",
                                                                  "invalid_data_error_code": "0204"
                                                              })
-    if not user_contact:
+    if user_contact["error"]:
         return {}
 
     logger.info(f"{request_id} - creating a new otp_token...")

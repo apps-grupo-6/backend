@@ -1,5 +1,4 @@
 from flask import Blueprint, g, request
-from marshmallow import ValidationError
 from configs.ServerConfig import logger
 
 from services import OtpServices

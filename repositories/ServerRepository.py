@@ -2,7 +2,7 @@ from configs.ServerConfig import logger
 from managers import ServerManager
 
 def create_request_log(request_id, user_id, method, endpoint, code, execution_time):
-    logger.info(f"{request_id} - saving request log")
+    logger.info(f"{request_id} - saving request log...")
     created = ServerManager.create_request_log(request_id=request_id,
                                                user_id=user_id,
                                                method=method,

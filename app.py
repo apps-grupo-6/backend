@@ -29,7 +29,7 @@ def before_request():
     g.method = ""
 
     logger.info(f"{g.request_id} - begin")
-    logger.info(f"{g.request_id} - request body: {request.json}")
+    logger.info(f"{g.request_id} - request body: {request.get_data(as_text=True)}")
 
 @app.after_request
 def after_request(response):

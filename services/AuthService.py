@@ -15,7 +15,7 @@ def login(model, request_id):
                                                      request_id=request_id,
                                                      errors_code_map={
                                                          "database_error_code": "0500",
-                                                         "invalid_data_error_code": "0204"
+                                                         "invalid_data_error_code": "0404"
                                                      })
     if get_user_info["error"]:
         return {}
@@ -35,7 +35,7 @@ def login(model, request_id):
         "user_id": user_id
     }
 
-    logger.info(f"{request_id} - generating token...")
+    logger.info(f"{request_id} - generating jwt token...")
     token = jwt.encode(payload, AuthConfig.jwt_secret, algorithm=AuthConfig.jwt_algorithm)
 
     logger.info(f"{request_id} - first step login was done successfully")
@@ -54,7 +54,7 @@ def login_otp(model, user_id, request_id):
                                                     request_id=request_id,
                                                     errors_code_map={
                                                               "database_error_code": "0500",
-                                                              "invalid_data_error_code": "0204"
+                                                              "invalid_data_error_code": "0404"
                                                           })
     if get_user_token["error"]:
         return {}
@@ -65,14 +65,14 @@ def login_otp(model, user_id, request_id):
         g.response_code = "0411"
         return {}
 
-    deleted = OtpRepository.delete_used_otp_token(user_id=user_id,
-                                                  otp_token=otp_token,
-                                                  request_id=request_id,
-                                                  errors_code_map={"database_error_code": "0501"})
+    deleted = OtpRepository.delete_otp(user_id=user_id,
+                                       otp_token=otp_token,
+                                       request_id=request_id,
+                                       errors_code_map={"database_error_code": "0501"})
 
     if deleted["error"]:
         return {}
 
-    logger.info(f"{request_id} - second step login was done successfully")
+    logger.info(f"{request_id} - second login step finished successfully; user has been authenticated")
     g.response_code = "0200"
     return {}

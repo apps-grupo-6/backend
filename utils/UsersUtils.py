@@ -18,7 +18,7 @@ def check_and_get_user_information(user_id, request_id, error_code_maps):
     )
 
     if exists_user["error"]:
-        return {}
+        return {"error": True}
 
     user_information = UserRepository.get_user_contact_information(
         user_id=user_id,
@@ -27,6 +27,6 @@ def check_and_get_user_information(user_id, request_id, error_code_maps):
     )
 
     if user_information["error"]:
-        return {}
+        return {"error": True}
 
     return user_information
