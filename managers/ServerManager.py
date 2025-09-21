@@ -27,32 +27,32 @@ def get_users(final_response, conn, cursor):
             SELECT
                 u.id AS user_id,
                 jsonb_build_object(
-                  'banned', uc.is_banned,
-                  'suspect', uc.is_suspicious,
-                  'forced_disconnect', uc.force_disconnect,
-                  'information', jsonb_build_object(
-                    'first_name', ui.first_name,
-                    'last_name', ui.last_name,
-                    'contact_email', ui.contact_email,
-                    'telephone', ui.telephone
-                  ),
-                  'permissions', COALESCE(
-                    jsonb_agg(jsonb_build_object(up.endpoint, up.id))
-                      FILTER (WHERE up.id IS NOT NULL),
-                    '[]'::jsonb
-                  ),
-                  'roles', COALESCE(
-                    jsonb_agg(DISTINCT r.name)
-                      FILTER (WHERE r.name IS NOT NULL),
-                    '[]'::jsonb
-                  )
+                    'banned', uc.is_banned,
+                    'suspect', uc.is_suspicious,
+                    'forced_disconnect', uc.force_disconnect,
+                    'information', jsonb_build_object(
+                        'first_name', ui.first_name,
+                        'last_name', ui.last_name,
+                        'contact_email', ui.contact_email,
+                        'telephone', ui.telephone
+                    ),
+                    'permissions', COALESCE(
+                        jsonb_object_agg(rp.method || '-' || rp.endpoint, rp.id
+                        ) FILTER (WHERE rp.id IS NOT NULL),
+                        '{}'::jsonb
+                    ),
+                    'roles', COALESCE(
+                        jsonb_agg(DISTINCT r.name)
+                        FILTER (WHERE r.name IS NOT NULL),
+                        '[]'::jsonb
+                    )
                 ) AS payload
             FROM users u
             JOIN user_information ui ON ui.user_id = u.id
-            JOIN user_controls uc    ON uc.user_id = u.id
-            LEFT JOIN user_permissions up ON up.user_id = u.id
+            JOIN user_controls uc ON uc.user_id = u.id
             LEFT JOIN user_roles ur ON ur.user_id = u.id
             LEFT JOIN roles r ON r.id = ur.role_id
+            LEFT JOIN role_permissions rp ON rp.role_id = r.id
             GROUP BY
                 u.id,
                 uc.is_banned, uc.is_suspicious, uc.force_disconnect,

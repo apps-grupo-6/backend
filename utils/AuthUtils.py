@@ -59,6 +59,20 @@ def jwt_token_required(func):
             if user_data["suspect"]: #if user was flagged as suspect
                 logger.warning(f"{g.request_id} - user_id '{user_id}' is flagged as suspect")
 
+            if user_id not in ServerUtils.BACKEND_DEVELOPERS:
+                user_permissions = user_data["permissions"]
+                check_endpoint = f"{g.method}-{g.endpoint}"
+
+                if g.endpoint_id_list:
+                    id = g.endpoint_id_list[0]
+                    check_endpoint = check_endpoint.replace(id, "<id>")
+
+                if check_endpoint not in user_permissions:
+                    logger.error(f"{g.request_id} - user_id '{user_id}' cannot use endpoint: '{check_endpoint}'")
+                    g.response_code = "9999"
+                    g.alert_description = f"user_id '{user_id}' tried to use a endpoint but its role does not allows it."
+                    return {"code": "0403", "description": "you are not allowed to use this function"}, 403
+
         except jwt.ExpiredSignatureError:
             logger.error(f"{g.request_id} - jwt token has expired")
             g.response_code = '0401'

@@ -47,7 +47,7 @@ def check_otp_token(final_response, conn, cursor, user_id, otp_token, request_id
 def check_if_user_exists(final_response, conn, cursor, user_id, request_id):
     try:
         query = """
-        SELECT jsonb_object_agg(user_id, payload) AS data
+                SELECT jsonb_object_agg(user_id, payload) AS data
         FROM (
             SELECT
                 u.id AS user_id,
@@ -62,16 +62,23 @@ def check_if_user_exists(final_response, conn, cursor, user_id, request_id):
                         'telephone', ui.telephone
                     ),
                     'permissions', COALESCE(
-                        jsonb_agg(jsonb_build_object(up.endpoint, up.id))
-                          FILTER (WHERE up.id IS NOT NULL),
+                        jsonb_agg(
+                            jsonb_build_object(up.method || '-' || up.endpoint, up.id)
+                        ) FILTER (WHERE up.id IS NOT NULL),
+                        '[]'::jsonb
+                    ),
+                    'roles', COALESCE(
+                        jsonb_agg(DISTINCT r.name)
+                        FILTER (WHERE r.name IS NOT NULL),
                         '[]'::jsonb
                     )
                 ) AS payload
             FROM users u
             JOIN user_information ui ON ui.user_id = u.id
-            JOIN user_controls uc    ON uc.user_id = u.id
+            JOIN user_controls uc ON uc.user_id = u.id
             LEFT JOIN user_permissions up ON up.user_id = u.id
-            WHERE u.id = %s
+            LEFT JOIN user_roles ur ON ur.user_id = u.id
+            LEFT JOIN roles r ON r.id = ur.role_id
             GROUP BY
                 u.id,
                 uc.is_banned, uc.is_suspicious, uc.force_disconnect,

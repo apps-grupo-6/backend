@@ -33,6 +33,7 @@ def before_request():
     g.user_data = {}
     g.endpoint = ""
     g.method = ""
+    g.endpoint_id_list = []
 
     logger.info(f"{g.request_id} - begin")
     logger.info(f"{g.request_id} - request body: {request.get_data(as_text=True)}")
@@ -79,7 +80,10 @@ def after_request(response):
         original_data["request_id"] = g.request_id
 
         if g.response_code:
-            if not g.response_code == '0401': # if not related to jwt token errors, retrieve all related information
+            # 0401 = jwt token errors
+            # 0403 = user role cant use the required endpoint with this method
+            if not g.response_code in ('0401', '0403'): # if not related to any login error, retrieve all related information
+                logger.info(g.response_code)
                 if g.response_code in special_errors_code_map:
                     description = "the request could not be processed"
                     status_code = 500

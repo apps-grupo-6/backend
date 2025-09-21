@@ -14,8 +14,11 @@ def configure_request(description_code_map, method="", endpoint=""):
             g.description_code_map = description_code_map
 
             final_endpoint = endpoint
+
             if endpoint and "<id>" in endpoint:
-                final_endpoint = endpoint.replace("<id>", str(kwargs['id']))
+                id = str(kwargs['id'])
+                g.endpoint_id_list.append(id)
+                final_endpoint = endpoint.replace("<id>", id)
 
             g.endpoint = f"/{func.__module__.split(".")[-1].replace("Controller", "").lower()}/{final_endpoint}"
             return func(*args, **kwargs)
