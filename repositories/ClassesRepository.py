@@ -174,7 +174,7 @@ def cancel_participant(class_id, user_id, request_id, errors_code_map):
         return {"flag": -1}
 
     if not participant_status["data"]:
-        logger.error(f"{request_id} - user does is not a class_id '{class_id}' participant or user's status cannot be changed to 'CANCELLED'")
+        logger.error(f"{request_id} - user's status cannot be changed to 'CANCELLED'")
         return {"flag": 0}
 
     logger.debug(f"{request_id} - participant cancelled successfully")
@@ -192,8 +192,44 @@ def confirm_participant(class_id, user_id, request_id, errors_code_map):
         return {"flag": -1}
 
     if not participant_confirmed["data"]:
-        logger.error(f"{request_id} - user does is not a class_id '{class_id}' participant  or user's status cannot be changed to 'CONFIRMED'")
+        logger.error(f"{request_id} - user's status cannot be changed to 'CONFIRMED'")
         return {"flag": 0}
 
     logger.debug(f"{request_id} - participant cancelled successfully")
+    return {"flag": 1}
+
+@ServerUtils.set_final_response
+def check_if_participant_exists(class_id, user_id, request_id, errors_code_map):
+    logger.info(f"{request_id} - checking if user_id '{user_id}' participates in class_id '{class_id}'...")
+    class_exists = ClassesManager.does_participant_exist(class_id=class_id,
+                                                         user_id=user_id,
+                                                         request_id=request_id)
+
+    if not class_exists["ok"]:
+        logger.critical(f"{request_id} - an error occurred while checking")
+        return {"flag": -1}
+
+    if not class_exists["data"]:
+        logger.error(f"{request_id} - user_id is not a participant in this class")
+        return {"flag": 0}
+
+    logger.debug(f"{request_id} - user_id is a participant in this class")
+    return {"flag": 1}
+
+@ServerUtils.set_final_response
+def check_if_user_doesnt_participant(class_id, user_id, request_id, errors_code_map):
+    logger.info(f"{request_id} - checking if '{user_id}' participates in class_id '{class_id}'...")
+    exists_participant = ClassesManager.does_participant_exist(class_id=class_id,
+                                                               user_id=user_id,
+                                                               request_id=request_id)
+
+    if not exists_participant["ok"]:
+        logger.critical(f"{request_id} - an error occurred while checking")
+        return {"flag": -1}
+
+    if exists_participant["data"]:
+        logger.error(f"{request_id} - user_id is already a participant in this class")
+        return {"flag": 0}
+
+    logger.debug(f"{request_id} - user_id is not a participant in this class")
     return {"flag": 1}

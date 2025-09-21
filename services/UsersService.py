@@ -1,9 +1,9 @@
 from flask import g
 from configs.ServerConfig import logger
 
-from managers import UsersManager
-from configs import UsersConfig
+from repositories import UsersRepository
 from utils import UsersUtils
+from templates import UserTemplate
 
 def register_account(model, request_id):
     username = model["username"]
@@ -14,20 +14,36 @@ def register_account(model, request_id):
     contact_email = model["contact_email"]
     hashed_password = UsersUtils.hash_password(password)
 
-    logger.info(f"{request_id} - trying to register username '{username}'...")
-    registered = UsersManager.register_account(username=username,
-                                               password=hashed_password,
+    exists_user = UsersRepository.check_if_username_doesnt_exist(username=username,
+                                                                 request_id=request_id,
+                                                                 errors_code_map={
+                                                                     "database_error_code": "0500",
+                                                                     "invalid_data_error_code": "0410"
+                                                                 })
+    if exists_user["error"]:
+        return {}
+
+    registered = UsersRepository.register_user(username=username,
+                                               hashed_password=hashed_password,
                                                first_name=first_name,
                                                last_name=last_name,
                                                telephone=telephone,
-                                               email=contact_email,
-                                               request_id=request_id)
+                                               contact_email=contact_email,
+                                               request_id=request_id,
+                                               errors_code_map={"database_error_code": "0501"})
 
-    if not registered["ok"]:
-        logger.critical(f"{request_id} - database failed when trying register this user")
-        g.response_code = "0500"
+    if registered["error"]:
         return {}
 
+    g.send_email_data = {
+        "subject": "¡Bienvenido/a a Excuses 404!",
+        "user_email": contact_email,
+        "user_firstname": first_name,
+        "user_lastname": last_name,
+        "html_content": UserTemplate.render_register_email(first_name=first_name,
+                                                           last_name=last_name,
+                                                           username=username)
+    }
     logger.info(f"{request_id} - username registered successfully")
     g.response_code = "0200"
     return {}

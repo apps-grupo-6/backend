@@ -1,6 +1,8 @@
 from configs.ServerConfig import logger
 from utils.DatabaseUtils import with_db_connection
 
+from configs import ClassesConfig
+
 @with_db_connection
 def check_if_duplicated(final_response, conn, cursor, professor_id, location_id, discipline_id, scheduled_at, request_id):
     try:
@@ -107,6 +109,7 @@ def get_class_information(final_response, conn, cursor, class_id, request_id):
         query = """
             SELECT 
                 c.id as class_id,
+                c.professor_id as professor_id,
                 ui.first_name as professor_first_name,
                 ui.last_name as professor_last_name,
                 c.location_id,
@@ -161,6 +164,7 @@ def get_all_classes(final_response, conn, cursor, request_id):
         query = """
             SELECT 
                 c.id as class_id,
+                c.professor_id as professor_id,
                 ui.first_name as professor_first_name,
                 ui.last_name as professor_last_name,
                 c.location_id,
@@ -315,10 +319,10 @@ def cancel_participant(final_response, conn, cursor, user_id, class_id, request_
             WHERE 
                 class_id = %s
                 AND user_id = %s
-                AND status NOT IN ('EXPIRED', 'ABSENT', 'PRESENT', 'CANCELLED')
+                AND status NOT IN %s
             RETURNING id;
         """
-        values = (class_id, user_id)
+        values = (class_id, user_id, ClassesConfig.BLOCKED_STATUS)
 
         cursor.execute(query, values)
         if cursor.rowcount > 0:
@@ -341,10 +345,10 @@ def confirm_participant(final_response, conn, cursor, user_id, class_id, request
             WHERE 
                 class_id = %s
                 AND user_id = %s
-                AND status NOT IN ('EXPIRED', 'ABSENT', 'PRESENT', 'CANCELLED', 'CONFIRMED')
+                AND status NOT IN %s
             RETURNING id;
         """
-        values = (class_id, user_id)
+        values = (class_id, user_id, ClassesConfig.BLOCK_CONFIRM_STATUS)
 
         cursor.execute(query, values)
         if cursor.rowcount > 0:
@@ -353,6 +357,27 @@ def confirm_participant(final_response, conn, cursor, user_id, class_id, request
         conn.commit()
     except:
         logger.exception(f"{request_id} - an error occurred while trying to get class upcoming classes")
+        final_response["ok"] = False
+
+    return final_response
+
+@with_db_connection
+def does_participant_exist(final_response, conn, cursor, class_id, user_id, request_id):
+    try:
+        query = """
+                SELECT 1
+                FROM class_participants
+                WHERE 
+                    class_id = %s
+                    AND user_id = %s
+                LIMIT 1;
+                """
+        values = (class_id, user_id)
+
+        cursor.execute(query, values)
+        final_response["data"] = cursor.fetchone()
+    except:
+        logger.exception(f"{request_id} - an error occurred while trying to check if user_id participates in this class")
         final_response["ok"] = False
 
     return final_response

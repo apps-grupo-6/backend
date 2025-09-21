@@ -4,6 +4,8 @@ from functools import wraps
 
 from configs import AuthConfig
 from configs.ServerConfig import logger
+from repositories import AuthRepository
+from utils import ServerUtils
 
 def jwt_token_required(func):
     @wraps(func)
@@ -20,9 +22,43 @@ def jwt_token_required(func):
 
         try:
             decode = jwt.decode(token, AuthConfig.jwt_secret, algorithms=[AuthConfig.jwt_algorithm])
-            g.user_id = decode["user_id"]
+            user_id = decode["user_id"]
+
             logger.debug(f"{g.request_id} - jwt token is valid")
-            logger.info(f"{g.request_id} - endpoint requested by user_id: '{g.user_id}'")
+            logger.info(f"{g.request_id} - endpoint requested by user_id: '{user_id}'")
+
+            logger.info(f"{g.request_id} - checking if user exists...")
+            str_user_id = str(user_id)
+            if not str_user_id in ServerUtils.USERS_DATA["data"]: # maybe user registered between retrieving users cron execution
+                exists = AuthRepository.check_if_user_exists(user_id=user_id, request_id=g.request_id)
+
+                if not exists["ok"]:
+                    logger.critical(f"{g.request_id} - an error occurred while checking")
+                    g.response_code = '-1'
+                    return {"code": "0500", "description": "the request could not be processed"}, 500
+
+                if not exists["data"]:
+                    g.alert_description = f"user_id '{user_id}' tried to login with a valid jwt token but this user_id is not registered in our database"
+                    logger.critical(f"{g.request_id} - [SECURITY BREACH] {g.alert_description}")
+                    g.response_code = '9999'
+                    return {"code": "0501", "description": "the request could not be processed"}, 500
+
+                user_data = exists["data"]
+            else:
+                user_data = ServerUtils.USERS_DATA["data"][str_user_id]
+
+            logger.debug(f"{g.request_id} - user_id exists")
+            g.user_id = user_id
+            g.user_data = user_data
+
+            if user_data["banned"]: #if user was banned
+                logger.error(f"{g.request_id} - user_id is banned")
+                g.response_code = '9998'
+                return {"code": "0403", "description": "the request could not be processed due to user_id is banned"}, 403
+
+            if user_data["suspect"]: #if user was flagged as suspect
+                logger.warning(f"{g.request_id} - user_id '{user_id}' is flagged as suspect")
+
         except jwt.ExpiredSignatureError:
             logger.error(f"{g.request_id} - jwt token has expired")
             g.response_code = '0401'

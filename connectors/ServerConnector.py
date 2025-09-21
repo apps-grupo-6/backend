@@ -8,7 +8,6 @@ def send_email(email, request_id):
     contact_api = sib_api_v3_sdk.ContactsApi(api_client)
     email_api = sib_api_v3_sdk.TransactionalEmailsApi(api_client)
 
-    logger.info(f"{request_id} - Sending email: {email}")
     user_email = email["user_email"]
     user_first_name = email["user_firstname"]
     user_last_name = email["user_lastname"]
@@ -22,10 +21,10 @@ def send_email(email, request_id):
 
     try:
         contact_api.create_contact(contact)
-        logger.info(f"{request_id} - {user_email} added or updated.")
+        logger.debug(f"{request_id} - {user_email} added or updated.")
     except ApiException as e:
         if e.status == 400 and "already exist" in str(e.body):
-            logger.info(f"{request_id} - {user_email} already exists.")
+            logger.debug(f"{request_id} - {user_email} already exists.")
         else:
             logger.exception(f"{request_id} - error while creating the contact")
             return
@@ -40,6 +39,6 @@ def send_email(email, request_id):
 
     try:
         response = email_api.send_transac_email(email)
-        logger.info(f"{request_id} - email sent to '{user_email}'. ID: '{response.message_id}'")
+        logger.debug(f"{request_id} - email sent to '{user_email}'. ID: '{response.message_id}'")
     except ApiException:
         logger.exception(f"{request_id} - there was an error while trying to sending email")

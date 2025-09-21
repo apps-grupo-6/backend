@@ -70,3 +70,8 @@ run_check = [
     f"classes={config.get('Classes', 'enabled')}",
     f"locations={config.get('Locations', 'enabled')}"
 ]
+
+# -1 = database error when trying to check if user exists in our database
+# 9998 = user is banned
+# 9999 = security breach
+special_errors_code_map = ("-1", "9998", "9999")

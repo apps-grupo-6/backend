@@ -1,6 +1,11 @@
 from flask import g
 from functools import wraps
 
+from repositories import ServerRepository
+
+USERS_DATA = {}
+BACKEND_DEVELOPERS = {}
+
 def configure_request(description_code_map, method="", endpoint=""):
     def decorator(func):
         @wraps(func)
@@ -38,3 +43,24 @@ def set_final_response(func):
             final_response["data"] = result["data"] if "data" in result else {}
         return final_response
     return wrapper
+
+def get_users():
+    global USERS_DATA, BACKEND_DEVELOPERS
+
+    users_data = ServerRepository.get_users()
+    USERS_DATA = users_data
+    temp = {}
+
+    for user in users_data["data"]:
+        user_information = users_data["data"][user]
+        user_roles = user_information["roles"]
+
+        if "BACKEND DEVELOPER" in user_roles:
+            user_contact = user_information["information"]
+            temp[user] = {
+                "user_email": user_contact["contact_email"],
+                "user_firstname": user_contact["first_name"],
+                "user_lastname": user_contact["last_name"]
+            }
+
+    BACKEND_DEVELOPERS = temp

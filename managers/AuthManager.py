@@ -42,3 +42,49 @@ def check_otp_token(final_response, conn, cursor, user_id, otp_token, request_id
         final_response["ok"] = False
 
     return final_response
+
+@with_db_connection
+def check_if_user_exists(final_response, conn, cursor, user_id, request_id):
+    try:
+        query = """
+        SELECT jsonb_object_agg(user_id, payload) AS data
+        FROM (
+            SELECT
+                u.id AS user_id,
+                jsonb_build_object(
+                    'banned', uc.is_banned,
+                    'suspect', uc.is_suspicious,
+                    'forced_disconnect', uc.force_disconnect,
+                    'information', jsonb_build_object(
+                        'first_name', ui.first_name,
+                        'last_name', ui.last_name,
+                        'contact_email', ui.contact_email,
+                        'telephone', ui.telephone
+                    ),
+                    'permissions', COALESCE(
+                        jsonb_agg(jsonb_build_object(up.endpoint, up.id))
+                          FILTER (WHERE up.id IS NOT NULL),
+                        '[]'::jsonb
+                    )
+                ) AS payload
+            FROM users u
+            JOIN user_information ui ON ui.user_id = u.id
+            JOIN user_controls uc    ON uc.user_id = u.id
+            LEFT JOIN user_permissions up ON up.user_id = u.id
+            WHERE u.id = %s
+            GROUP BY
+                u.id,
+                uc.is_banned, uc.is_suspicious, uc.force_disconnect,
+                ui.first_name, ui.last_name, ui.contact_email, ui.telephone
+        ) t;
+        """
+        values = (user_id,)
+
+        logger.info(query%values)
+        cursor.execute(query, values)
+        final_response["data"] = cursor.fetchone()
+    except:
+        logger.exception(f"{request_id} - an error occurred while checking if user exists")
+        final_response["ok"] = False
+
+    return final_response

@@ -1,8 +1,6 @@
-from datetime import datetime
-
 from repositories import ClassesRepository
 
-def check_and_get_class(class_id, request_id, error_code_maps):
+def check_and_get_class_information(class_id, request_id, error_code_maps):
     exists_class = ClassesRepository.check_if_class_exists(
         class_id=class_id,
         request_id=request_id,

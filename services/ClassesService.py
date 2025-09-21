@@ -3,7 +3,7 @@ import datetime
 from configs.ServerConfig import logger
 from flask import g
 
-from repositories import ClassesRepository, UserRepository, LocationsRepository, DisciplinesRepository
+from repositories import ClassesRepository, UsersRepository, LocationsRepository, DisciplinesRepository
 from utils import ClassesUtils
 
 def get_all_classes(request_id):
@@ -43,12 +43,12 @@ def create_class(model, request_id):
         g.response_code = "0410"
         return {}
 
-    exists_user = UserRepository.check_if_user_exists(user_id=professor_id,
-                                                      request_id=request_id,
-                                                      errors_code_map={
-                                                          "database_error_code": "0501",
-                                                          "invalid_data_error_code": "0404"
-                                                      })
+    exists_user = UsersRepository.check_if_user_exists(user_id=professor_id,
+                                                       request_id=request_id,
+                                                       errors_code_map={
+                                                           "database_error_code": "0501",
+                                                           "invalid_data_error_code": "0404"
+                                                       })
 
     if exists_user["error"]:
         return {}
@@ -101,12 +101,12 @@ def get_user_upcoming_classes(user_id, request_id):
     }
 
 def get_class(class_id, request_id):
-    class_information = ClassesUtils.check_and_get_class(class_id=class_id,
-                                                         request_id=request_id,
-                                                         error_code_maps={
-                                                            "database_error_code": "0500",
-                                                            "invalid_data_error_code": "0404"
-                                                        })
+    class_information = ClassesUtils.check_and_get_class_information(class_id=class_id,
+                                                                     request_id=request_id,
+                                                                     error_code_maps={
+                                                                         "database_error_code": "0500",
+                                                                         "invalid_data_error_code": "0404"
+                                                                     })
 
     if class_information["error"]:
         return {}
@@ -122,7 +122,7 @@ def update_class(model, class_id, request_id):
     values = []
     fields_to_check = {
         "professor_id": {
-            "function": UserRepository.check_if_user_exists,
+            "function": UsersRepository.check_if_user_exists,
             "on_error": {
                 "database_error_code": "0501",
                 "invalid_data_error_code": "0405"
@@ -144,12 +144,12 @@ def update_class(model, class_id, request_id):
         }
     }
 
-    class_information = ClassesUtils.check_and_get_class(class_id=class_id,
-                                                         request_id=request_id,
-                                                         error_code_maps={
-                                                            "database_error_code": "0500",
-                                                            "invalid_data_error_code": "0404"
-                                                        })
+    class_information = ClassesUtils.check_and_get_class_information(class_id=class_id,
+                                                                     request_id=request_id,
+                                                                     error_code_maps={
+                                                                         "database_error_code": "0500",
+                                                                         "invalid_data_error_code": "0404"
+                                                                     })
 
     if class_information["error"]:
         return {}
@@ -195,15 +195,22 @@ def update_class(model, class_id, request_id):
     g.response_code = "0200"
     return {}
 
-def finish_class(class_id, request_id):
-    class_information = ClassesUtils.check_and_get_class(class_id=class_id,
-                                                         request_id=request_id,
-                                                         error_code_maps={
-                                                            "database_error_code": "0500",
-                                                            "invalid_data_error_code": "0404"
-                                                        })
+def finish_class(class_id, user_id, request_id):
+    class_information = ClassesUtils.check_and_get_class_information(class_id=class_id,
+                                                                     request_id=request_id,
+                                                                     error_code_maps={
+                                                                         "database_error_code": "0500",
+                                                                         "invalid_data_error_code": "0404"
+                                                                     })
 
     if class_information["error"]:
+        return {}
+
+    professor_id = class_information["data"]["professor_id"]
+    if not professor_id == user_id:
+        g.alert_description = f"user_id '{user_id}' tried to finish class_id '{class_id}' which professor_id is '{professor_id}'"
+        logger.critical(f"{request_id} - [SECURITY BREACH] {g.alert_description}")
+        g.response_code = "9999"
         return {}
 
     if class_information["data"]["ended_at"]:
@@ -229,12 +236,12 @@ def finish_class(class_id, request_id):
     return {}
 
 def add_class_participant(class_id, user_id, request_id):
-    class_information = ClassesUtils.check_and_get_class(class_id=class_id,
-                                                         request_id=request_id,
-                                                         error_code_maps={
-                                                             "database_error_code": "0500",
-                                                             "invalid_data_error_code": "0404"
-                                                         })
+    class_information = ClassesUtils.check_and_get_class_information(class_id=class_id,
+                                                                     request_id=request_id,
+                                                                     error_code_maps={
+                                                                         "database_error_code": "0500",
+                                                                         "invalid_data_error_code": "0404"
+                                                                     })
 
     if class_information["error"]:
         return {}
@@ -244,9 +251,20 @@ def add_class_participant(class_id, user_id, request_id):
         g.response_code = "0410"
         return {}
 
+    exists_participant = ClassesRepository.check_if_user_doesnt_participant(class_id=class_id,
+                                                                            user_id=user_id,
+                                                                            request_id=request_id,
+                                                                            errors_code_map={
+                                                                                "database_error_code": "0501",
+                                                                                "invalid_data_error_code": "0405"
+                                                                            })
+
+    if exists_participant["error"]:
+        return {}
+
     class_participants = ClassesRepository.get_class_participants(class_id=class_id,
                                                                   request_id=request_id,
-                                                                  errors_code_map={"database_error_code": "0501"})
+                                                                  errors_code_map={"database_error_code": "0502"})
     if class_participants["error"]:
         return {}
 
@@ -258,7 +276,7 @@ def add_class_participant(class_id, user_id, request_id):
     added_participant = ClassesRepository.add_class_participant(class_id=class_id,
                                                                 user_id=user_id,
                                                                 request_id=request_id,
-                                                                errors_code_map={"database_error_code": "0502"})
+                                                                errors_code_map={"database_error_code": "0503"})
 
     if added_participant["error"]:
         return {}
@@ -277,12 +295,23 @@ def cancel_participant(class_id, user_id, request_id):
     if exists_class["error"]:
         return {}
 
+    exists_participant = ClassesRepository.check_if_participant_exists(class_id=class_id,
+                                                                       user_id=user_id,
+                                                                       request_id=request_id,
+                                                                       errors_code_map={
+                                                                           "database_error_code": "0501",
+                                                                           "invalid_data_error_code": "0405",
+                                                                       })
+
+    if exists_participant["error"]:
+        return {}
+
     cancel_user = ClassesRepository.cancel_participant(class_id=class_id,
                                                        user_id=user_id,
                                                        request_id=request_id,
                                                        errors_code_map={
                                                            "database_error_code": "0501",
-                                                           "invalid_data_error_code": "0405"
+                                                           "invalid_data_error_code": "0406"
                                                        })
 
     if cancel_user["error"]:
@@ -301,12 +330,23 @@ def confirm_participant(class_id, user_id, request_id):
     if exists_class["error"]:
         return {}
 
+    exists_participant = ClassesRepository.check_if_participant_exists(class_id=class_id,
+                                                                       user_id=user_id,
+                                                                       request_id=request_id,
+                                                                       errors_code_map={
+                                                                           "database_error_code": "0501",
+                                                                           "invalid_data_error_code": "0405",
+                                                                       })
+
+    if exists_participant["error"]:
+        return {}
+
     confirm_user = ClassesRepository.confirm_participant(class_id=class_id,
                                                          user_id=user_id,
                                                          request_id=request_id,
                                                          errors_code_map={
                                                              "database_error_code": "0501",
-                                                             "invalid_data_error_code": "0405"
+                                                             "invalid_data_error_code": "0406"
                                                          })
 
     if confirm_user["error"]:

@@ -10,7 +10,7 @@ from utils import ServerUtils
 bp = Blueprint('users', __name__)
 
 @bp.post("/")
-@ServerUtils.configure_request(description_code_map=UsersConfig.register_account_code_map)
+@ServerUtils.configure_request(description_code_map=UsersConfig.register_account_code_map, method="POST")
 def register_account():
     try:
         logger.info(f"{g.request_id} - starting register_account")

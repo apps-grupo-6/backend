@@ -10,16 +10,16 @@ from models import ClassesModel
 from services import ClassesService
 
 @bp.get("/")
-@AuthUtils.jwt_token_required
 @ServerUtils.configure_request(description_code_map=ClassesConfig.get_all_classes_code_map, method="GET")
+@AuthUtils.jwt_token_required
 def get_all_classes():
     # Created by Luciana
     logger.info(f"{g.request_id} - starting get_all_classes")
     return ClassesService.get_all_classes(request_id=g.request_id)
 
 @bp.post("/")
-@AuthUtils.jwt_token_required
 @ServerUtils.configure_request(description_code_map=ClassesConfig.create_class_code_map, method="POST")
+@AuthUtils.jwt_token_required
 def create_class():
     try:
         logger.info(f"{g.request_id} - starting create_class")
@@ -38,22 +38,22 @@ def create_class():
     return ClassesService.create_class(model=model, request_id=g.request_id)
 
 @bp.get("/upcoming")
-@AuthUtils.jwt_token_required
 @ServerUtils.configure_request(description_code_map=ClassesConfig.upcoming_classes_code_map, method="GET", endpoint="upcoming")
+@AuthUtils.jwt_token_required
 def get_user_upcoming_classes():
     logger.info(f"{g.request_id} - starting get_user_upcoming_classes")
     return ClassesService.get_user_upcoming_classes(user_id=g.user_id, request_id=g.request_id)
 
 @bp.get("/<int:id>")
-@AuthUtils.jwt_token_required
 @ServerUtils.configure_request(description_code_map=ClassesConfig.get_class_code_map, method="GET", endpoint="<id>")
+@AuthUtils.jwt_token_required
 def get_class(id):
     logger.info(f"{g.request_id} - starting get_class")
     return ClassesService.get_class(class_id=id, request_id=g.request_id)
 
 @bp.put("/<int:id>")
-@AuthUtils.jwt_token_required
 @ServerUtils.configure_request(description_code_map=ClassesConfig.update_class_code_map, method="PUT", endpoint="<id>")
+@AuthUtils.jwt_token_required
 def update_class(id):
     try:
         logger.info(f"{g.request_id} - starting update_class")
@@ -72,29 +72,29 @@ def update_class(id):
     return ClassesService.update_class(model=model, class_id=id, request_id=g.request_id)
 
 @bp.put("/<int:id>/finish")
-@AuthUtils.jwt_token_required
 @ServerUtils.configure_request(description_code_map=ClassesConfig.finish_class_code_map, method="PUT", endpoint="<id>/finish")
+@AuthUtils.jwt_token_required
 def finish_class(id):
     logger.info(f"{g.request_id} - starting finish_class")
-    return ClassesService.finish_class(class_id=id, request_id=g.request_id)
+    return ClassesService.finish_class(class_id=id, user_id=g.user_id, request_id=g.request_id)
 
 @bp.post("/<int:id>/participant")
-@AuthUtils.jwt_token_required
 @ServerUtils.configure_request(description_code_map=ClassesConfig.add_class_participant_code_map, method="POST", endpoint="<id>/participant")
+@AuthUtils.jwt_token_required
 def add_class_participant(id):
     logger.info(f"{g.request_id} - starting add_class_participant")
     return ClassesService.add_class_participant(class_id=id, user_id=g.user_id, request_id=g.request_id)
 
 @bp.delete("/<int:id>/participant")
-@AuthUtils.jwt_token_required
 @ServerUtils.configure_request(description_code_map=ClassesConfig.cancel_participant_code_map, method="DELETE", endpoint="<id>/participant")
+@AuthUtils.jwt_token_required
 def cancel_participant(id):
     logger.info(f"{g.request_id} - starting cancel_participant")
     return ClassesService.cancel_participant(class_id=id, user_id=g.user_id, request_id=g.request_id)
 
 @bp.put("/<int:id>/participant/confirm")
-@AuthUtils.jwt_token_required
 @ServerUtils.configure_request(description_code_map=ClassesConfig.confirm_participant_code_map, method="PUT", endpoint="<id>/participant/confirm")
+@AuthUtils.jwt_token_required
 def confirm_participant(id):
     logger.info(f"{g.request_id} - starting confirm_participant")
     return ClassesService.confirm_participant(class_id=id, user_id=g.user_id, request_id=g.request_id)

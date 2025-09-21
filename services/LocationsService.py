@@ -1,8 +1,8 @@
 from configs.ServerConfig import logger
 from flask import g
 
-from managers import LocationsManager, UsersManager
-from repositories import UserRepository
+from managers import LocationsManager
+from repositories import UsersRepository
 
 def create_location(model, request_id):
     owner_id = model['owner_id']
@@ -10,12 +10,12 @@ def create_location(model, request_id):
     city = model['city']
     address = model['address']
 
-    exists_user = UserRepository.check_if_user_exists(user_id=owner_id,
-                                                      request_id=request_id,
-                                                      errors_code_map={
-                                                          "database_error_code": "0500",
-                                                          "invalid_data_error_code": "0410"
-                                                      })
+    exists_user = UsersRepository.check_if_user_exists(user_id=owner_id,
+                                                       request_id=request_id,
+                                                       errors_code_map={
+                                                           "database_error_code": "0500",
+                                                           "invalid_data_error_code": "0410"
+                                                       })
 
     if exists_user["error"]:
         return {}
