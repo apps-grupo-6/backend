@@ -2,7 +2,7 @@ from flask import g
 from configs.ServerConfig import logger
 
 from repositories import UsersRepository
-from utils import UsersUtils
+from utils import UsersUtils, ClassesUtils
 from templates import UserTemplate
 
 def register_account(model, request_id):
@@ -47,3 +47,46 @@ def register_account(model, request_id):
     logger.info(f"{request_id} - username registered successfully")
     g.response_code = "0200"
     return {}
+
+def update_user_information(model, user_id, request_id):
+    logger.info(f"{request_id} - formatting fields...")
+    formatted_update = UsersUtils.update_class_fields_formatter(model=model, request_id=request_id)
+
+    error = formatted_update["error"]
+    columns = formatted_update["columns"]
+    values = formatted_update["values"]
+
+    if error:
+        return {}
+
+    if not columns:
+        logger.error(f"{request_id} - all updatable fields are empty")
+        g.response_code = "0410"
+        return {}
+
+    update_columns = ", ".join(columns)
+    values.append(user_id)
+    logger.debug(f"{request_id} - columns to update: {update_columns}")
+    updated = UsersRepository.update_user(update_columns=update_columns,
+                                          update_values=values,
+                                          request_id=request_id,
+                                          errors_code_map={"database_error_code": "0500"})
+
+    if updated["error"]:
+        return {}
+
+    g.response_code = "0200"
+    return {}
+
+def get_user_information(user_id, request_id):
+    user_information = UsersRepository.get_user_contact_information(user_id=user_id,
+                                                                    request_id=request_id,
+                                                                    errors_code_map={"database_error_code": "0500"})
+
+    if user_information["error"]:
+        return {}
+
+    g.response_code = "0200"
+    return {
+        "data": user_information['data']
+    }

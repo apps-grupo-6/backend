@@ -8,16 +8,9 @@ class create_class(Schema):
     max_participants = fields.Integer(required=True, validate=validate.Range(min=1, max=50))
     qr = fields.String(required=True, validate=validate.Length(min=1, max=150))
 
-    class Meta:
-        unknown = 'exclude'
-
 class update_class(Schema):
-    professor_id = fields.String(required=False)
     location_id = fields.String(required=False)
     discipline_id = fields.String(required=False)
     scheduled_at = fields.String(required=False)
     max_participants = fields.String(required=False)
     qr = fields.String(required=True, validate=validate.Length(min=1, max=150))
-
-    class Meta:
-        unknown = 'exclude'

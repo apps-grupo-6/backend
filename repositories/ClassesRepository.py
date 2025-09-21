@@ -59,11 +59,11 @@ def check_if_duplicated(professor_id, location_id, discipline_id, scheduled_at, 
         logger.critical(f"{request_id} - an error occurred while while checking")
         return {"flag": -1}
 
-    if not is_duplicated["data"]:
-        logger.debug(f"{request_id} - there's a duplicated class with this information")
-    else:
-        logger.debug(f"{request_id} - there isn't a duplicated class with this information")
+    if is_duplicated["data"]:
+        logger.error(f"{request_id} - there's a duplicated class with this information")
+        return {"flag": 0}
 
+    logger.debug(f"{request_id} - there isn't a duplicated class with this information")
     return {"flag": 1}
 
 @ServerUtils.set_final_response
@@ -164,7 +164,7 @@ def update_participants_status(class_id, request_id, errors_code_map):
 
 @ServerUtils.set_final_response
 def cancel_participant(class_id, user_id, request_id, errors_code_map):
-    logger.info(f"{request_id} - cancelling participant with user_id '{user_id}' presence in class_id '{class_id}'...")
+    logger.info(f"{request_id} - trying to cancel participant with user_id '{user_id}' presence in class_id '{class_id}'...")
     participant_status = ClassesManager.cancel_participant(class_id=class_id,
                                                            user_id=user_id,
                                                            request_id=request_id)
@@ -182,7 +182,7 @@ def cancel_participant(class_id, user_id, request_id, errors_code_map):
 
 @ServerUtils.set_final_response
 def confirm_participant(class_id, user_id, request_id, errors_code_map):
-    logger.info(f"{request_id} - confirming participant with user_id '{user_id}' presence in class_id '{class_id}'...")
+    logger.info(f"{request_id} - trying to confirm participant with user_id '{user_id}' presence in class_id '{class_id}'...")
     participant_confirmed = ClassesManager.confirm_participant(class_id=class_id,
                                                                user_id=user_id,
                                                                request_id=request_id)

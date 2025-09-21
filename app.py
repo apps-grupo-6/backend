@@ -83,7 +83,6 @@ def after_request(response):
             # 0401 = jwt token errors
             # 0403 = user role cant use the required endpoint with this method
             if not g.response_code in ('0401', '0403'): # if not related to any login error, retrieve all related information
-                logger.info(g.response_code)
                 if g.response_code in special_errors_code_map:
                     description = "the request could not be processed"
                     status_code = 500

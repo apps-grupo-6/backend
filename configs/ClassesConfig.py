@@ -1,5 +1,24 @@
+from repositories import LocationsRepository, DisciplinesRepository
+
 BLOCKED_STATUS = ('EXPIRED', 'ABSENT', 'PRESENT', 'CANCELLED')
 BLOCK_CONFIRM_STATUS = BLOCKED_STATUS + ('CONFIRMED',)
+
+update_class_fields_to_check = {
+    "location_id": {
+        "function": LocationsRepository.check_if_location_exists,
+        "on_error": {
+            "database_error_code": "0502",
+            "invalid_data_error_code": "0406"
+        }
+    },
+    "discipline_id": {
+        "function": DisciplinesRepository.check_if_discipline_exists,
+        "on_error": {
+            "database_error_code": "0503",
+            "invalid_data_error_code": "0407"
+        }
+    }
+}
 
 get_all_classes_code_map = {
     "0200": ("ok", 200),
@@ -12,7 +31,7 @@ create_class_code_map = {
     "0404": ("invalid user_id", 404),
     "0405": ("invalid location_id", 404),
     "0406": ("invalid discipline_id", 404),
-    "0413": ("there is a class with this data", 400),
+    "0410": ("there is an existent class with this data", 400),
     "0500": ("the request could not be processed", 500),
     "0501": ("the request could not be processed", 500),
     "0502": ("the request could not be processed", 500),
@@ -41,10 +60,15 @@ update_class_code_map = {
     "0407": ("invalid discipline_id", 404),
     "0410": ("all updatable fields are empty", 400),
     "0411": ("there is no difference between sent qr and the actual one", 400),
+    "0412": ("scheduled_at cannot be earlier than the current scheduled_at", 400),
+    "0413": ("scheduled_at cannot be in the past", 400),
+    "0414": ("max_participants cannot be greater than the number of participants", 400),
     "0500": ("the request could not be processed", 500),
     "0501": ("the request could not be processed", 500),
     "0502": ("the request could not be processed", 500),
-    "0503": ("the request could not be processed", 500)
+    "0503": ("the request could not be processed", 500),
+    "0504": ("the request could not be processed", 500),
+    "0505": ("the request could not be processed", 500)
 }
 
 finish_class_code_map = {

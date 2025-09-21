@@ -69,3 +69,33 @@ def check_if_username_doesnt_exist(username, request_id, errors_code_map):
 
     logger.debug(f"{request_id} - username does not exist")
     return {"flag": 1, "data": exists_username['data']}
+
+@ServerUtils.set_final_response
+def update_user(update_columns, update_values, request_id, errors_code_map):
+    logger.info(f"{request_id} - updating user_id '{update_values[-1]}'...")
+    updated = UsersManager.update_user(update_columns=update_columns,
+                                       update_values=update_values,
+                                       request_id=request_id)
+
+    if not updated["ok"]:
+        logger.critical(f"{request_id} - an error occurred while updating")
+        return {"flag": -1}
+
+    logger.debug(f"{request_id} - user updated successfully")
+    return {"flag": 1}
+
+@ServerUtils.set_final_response
+def check_if_username_exists(username, request_id, errors_code_map):
+    logger.info(f"{request_id} - checking if username '{username}' exists...")
+    exists_username = UsersManager.does_username_exist(username=username, request_id=request_id)
+
+    if not exists_username["ok"]:
+        logger.critical(f"{request_id} - an error occurred while checking")
+        return {"flag": -1}
+
+    if not exists_username["data"]:
+        logger.error(f"{request_id} - username does not exist")
+        return {"flag": 0}
+
+    logger.debug(f"{request_id} - username exists")
+    return {"flag": 1, "data": exists_username['data']}

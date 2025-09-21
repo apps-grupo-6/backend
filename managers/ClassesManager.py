@@ -16,7 +16,7 @@ def check_if_duplicated(final_response, conn, cursor, professor_id, location_id,
                 AND scheduled_at = %s
             LIMIT 1;
         """
-        values = (professor_id, location_id, discipline_id)
+        values = (professor_id, location_id, discipline_id, scheduled_at)
 
         cursor.execute(query, values)
         final_response["data"] = cursor.fetchone()
@@ -93,7 +93,7 @@ def update_class(final_response, conn, cursor, update_columns, update_values, re
                 {update_columns}
             WHERE id = %s
         """
-        values = update_values
+        values = tuple(update_values)
 
         cursor.execute(query, values)
         conn.commit()
@@ -194,12 +194,12 @@ def get_all_classes(final_response, conn, cursor, request_id):
             LEFT JOIN locations l ON c.location_id = l.id  
             LEFT JOIN disciplines d ON c.discipline_id = d.id
             LEFT JOIN class_participants cp on c.id = cp.class_id
-            ORDER BY c.scheduled_at DESC;
             GROUP BY 
                 c.id, ui.first_name, ui.last_name,
                 c.location_id, l.city, l.address, d.name,
                 c.scheduled_at, c.max_participants, c.status,
                 c.ended_at, c.qr, c.created_at
+            ORDER BY c.scheduled_at DESC
             LIMIT 1;
         """
 
@@ -240,9 +240,9 @@ def get_class_participants(final_response, conn, cursor, class_id, request_id):
 def add_class_participant(final_response, conn, cursor, class_id, user_id, request_id):
     try:
         query = """
-                INSERT INTO class_participants (class_id, user_id, added_at)
-                VALUES (%s, %s, NOW())
-                """
+            INSERT INTO class_participants (class_id, user_id, added_at)
+            VALUES (%s, %s, NOW())
+        """
         values = (class_id, user_id)
 
         cursor.execute(query, values)
@@ -365,13 +365,13 @@ def confirm_participant(final_response, conn, cursor, user_id, class_id, request
 def does_participant_exist(final_response, conn, cursor, class_id, user_id, request_id):
     try:
         query = """
-                SELECT 1
-                FROM class_participants
-                WHERE 
-                    class_id = %s
-                    AND user_id = %s
-                LIMIT 1;
-                """
+            SELECT 1
+            FROM class_participants
+            WHERE 
+                class_id = %s
+                AND user_id = %s
+            LIMIT 1;
+        """
         values = (class_id, user_id)
 
         cursor.execute(query, values)

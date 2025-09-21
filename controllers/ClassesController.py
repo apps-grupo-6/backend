@@ -69,7 +69,7 @@ def update_class(id):
         }
 
     logger.info(f"{g.request_id} - finished mandatory fields check")
-    return ClassesService.update_class(model=model, class_id=id, request_id=g.request_id)
+    return ClassesService.update_class(model=model, class_id=id, user_id=g.user_id, request_id=g.request_id)
 
 @bp.put("/<int:id>/finish")
 @ServerUtils.configure_request(description_code_map=ClassesConfig.finish_class_code_map, method="PUT", endpoint="<id>/finish")

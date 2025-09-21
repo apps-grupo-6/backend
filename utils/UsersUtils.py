@@ -27,3 +27,18 @@ def check_and_get_user_information(user_id, request_id, error_code_maps):
         return {"error": True}
 
     return user_information
+
+def update_class_fields_formatter(model, request_id):
+    columns = []
+    values = []
+    error = False
+
+    for key in model:
+        columns.append(f"{key} = %s")
+        values.append(model[key])
+
+    return {
+        "error": error,
+        "columns": columns,
+        "values": values
+    }

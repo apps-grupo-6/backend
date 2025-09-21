@@ -33,14 +33,12 @@ def create_class(model, request_id):
                                                           discipline_id=discipline_id,
                                                           scheduled_at=scheduled_at,
                                                           request_id=request_id,
-                                                          errors_code_map={"database_error_code": "0500"})
+                                                          errors_code_map={
+                                                              "database_error_code": "0500",
+                                                              "invalid_data_error_code": "0410"
+                                                          })
 
     if is_duplicated["error"]:
-        return {}
-
-    if is_duplicated["data"]:
-        logger.error(f"{request_id} - the requsted class already exists")
-        g.response_code = "0410"
         return {}
 
     exists_user = UsersRepository.check_if_user_exists(user_id=professor_id,
@@ -116,33 +114,8 @@ def get_class(class_id, request_id):
         "data": class_information["data"] or []
     }
 
-def update_class(model, class_id, request_id):
+def update_class(model, class_id, user_id, request_id):
     qr = model["qr"]
-    columns = []
-    values = []
-    fields_to_check = {
-        "professor_id": {
-            "function": UsersRepository.check_if_user_exists,
-            "on_error": {
-                "database_error_code": "0501",
-                "invalid_data_error_code": "0405"
-            }
-        },
-        "location_id": {
-            "function": LocationsRepository.check_if_location_exists,
-            "on_error": {
-                "database_error_code": "0502",
-                "invalid_data_error_code": "0406"
-            }
-        },
-        "discipline_id": {
-            "function": DisciplinesRepository.check_if_discipline_exists,
-            "on_error": {
-                "database_error_code": "0503",
-                "invalid_data_error_code": "0407"
-            }
-        }
-    }
 
     class_information = ClassesUtils.check_and_get_class_information(class_id=class_id,
                                                                      request_id=request_id,
@@ -154,20 +127,18 @@ def update_class(model, class_id, request_id):
     if class_information["error"]:
         return {}
 
-    error = False
-    for key in model:
-        if key in fields_to_check:
-            checking = fields_to_check[key]
-            call = checking["function"](model[key],
-                                        request_id=request_id,
-                                        errors_code_map=checking["on_error"])
+    professor_id = class_information["data"]["professor_id"]
+    if not user_id == professor_id:
+        g.alert_description = f"user_id '{user_id}' tried to update class '{class_id}' which professor_id is '{professor_id}'"
+        logger.critical(f"{request_id} - [SECURITY BREACH] {g.alert_description}")
+        g.response_code = "9999"
+        return {}
 
-            if call["error"]:
-                error = True
-                break
-
-        columns.append(f"{key} = %s")
-        values.append(model[key])
+    logger.info(f"{request_id} - formatting fields...")
+    formatted_update = ClassesUtils.update_class_fields_formatter(model=model, request_id=request_id)
+    error = formatted_update["error"]
+    columns = formatted_update["columns"]
+    values = formatted_update["values"]
 
     if error:
         return {}
@@ -177,6 +148,30 @@ def update_class(model, class_id, request_id):
         g.response_code = "0410"
         return {}
 
+    if "scheduled_at" in model:
+        if model["scheduled_at"] <= class_information["data"]["scheduled_at"]:
+            logger.error(f"{request_id} - scheduled_at cannot be earlier than the current scheduled_at")
+            g.response_code = "0412"
+            return {}
+
+        if model["scheduled_at"] < datetime.datetime.now():
+            logger.error(f"{request_id} - scheduled_at cannot be in the past")
+            g.response_code = "0413"
+            return {}
+
+    if "max_participants" in model:
+        participants = ClassesRepository.get_class_participants(class_id=class_id,
+                                                                request_id=request_id,
+                                                                errors_code_map={"database_error_code": "0504"})
+
+        if participants["error"]:
+            return {}
+
+        if model["max_participants"] > len(participants["data"]):
+            logger.error(f"{request_id} - max_participants cannot be greater than the number of participants")
+            g.response_code = "0414"
+            return {}
+
     if class_information["data"]["qr"] == qr:
         logger.error(f"{request_id} - sent qr is equal to actual class qr (if equal, there's no new data)")
         g.response_code = "0411"
@@ -184,10 +179,11 @@ def update_class(model, class_id, request_id):
 
     update_columns = ", ".join(columns)
     values.append(class_id)
+    logger.debug(f"{request_id} - columns to update: {update_columns}")
     updated = ClassesRepository.update_class(update_columns=update_columns,
                                              update_values=values,
                                              request_id=request_id,
-                                             errors_code_map={"database_error_code": "0502"})
+                                             errors_code_map={"database_error_code": "0505"})
 
     if updated["error"]:
         return {}

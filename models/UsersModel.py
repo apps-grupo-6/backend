@@ -8,5 +8,8 @@ class register_account(Schema):
     telephone = fields.String(required=True, validate=validate.Length(min=1, max=14))
     contact_email = fields.String(required=True, validate=validate.Length(min=1, max=100))
 
-    class Meta:
-        unknown = 'exclude'
+class update_user_information(Schema):
+    first_name = fields.String(required=False)
+    last_name = fields.String(required=False)
+    telephone = fields.String(required=False)
+    contact_email = fields.String(required=False)

@@ -2,15 +2,17 @@ from configs.ServerConfig import logger
 from utils import DatabaseUtils
 
 @DatabaseUtils.with_db_connection
-def check_if_user_has_active_otp(final_response, conn, cursor, user_id, request_id):
+def check_if_user_has_active_otp(final_response, conn, cursor, user_id, type, request_id):
     try:
         query = """
             SELECT expires_at
             FROM otp_tokens
-            WHERE user_id = %s
+            WHERE 
+                user_id = %s
+                AND type = %s
             LIMIT 1;
         """
-        values = (user_id,)
+        values = (user_id, type)
 
         cursor.execute(query, values)
         final_response["data"] = cursor.fetchone()
@@ -21,17 +23,17 @@ def check_if_user_has_active_otp(final_response, conn, cursor, user_id, request_
     return final_response
 
 @DatabaseUtils.with_db_connection
-def save_otp(final_response, conn, cursor, user_id, otp_token, request_id):
+def save_otp(final_response, conn, cursor, user_id, otp_token, type, request_id):
     try:
         query = """
-            INSERT INTO otp_tokens (user_id, token, expires_at)
-            VALUES (%s, %s, NOW() + INTERVAL '15 minutes')
-            ON CONFLICT (user_id)
+            INSERT INTO otp_tokens (user_id, token, type, expires_at)
+            VALUES (%s, %s, %s, NOW() + INTERVAL '15 minutes')
+            ON CONFLICT (user_id, type)
             DO UPDATE SET
                 token = EXCLUDED.token,
                 expires_at = EXCLUDED.expires_at;
         """
-        values = (user_id, otp_token)
+        values = (user_id, otp_token, type)
 
         cursor.execute(query, values)
         conn.commit()
@@ -42,13 +44,16 @@ def save_otp(final_response, conn, cursor, user_id, otp_token, request_id):
     return final_response
 
 @DatabaseUtils.with_db_connection
-def delete_otp(final_response, conn, cursor, user_id, otp_token, request_id):
+def delete_otp(final_response, conn, cursor, user_id, otp_token, type, request_id):
     try:
         query = """
             DELETE FROM otp_tokens
-            WHERE user_id = %s AND token = %s
+            WHERE 
+                user_id = %s 
+                AND token = %s
+                AND type = %s
         """
-        values = (user_id, otp_token)
+        values = (user_id, otp_token, type)
 
         cursor.execute(query, values)
         conn.commit()

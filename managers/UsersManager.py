@@ -60,7 +60,7 @@ def does_user_exist(final_response, conn, cursor, user_id, request_id):
 def does_username_exist(final_response, conn, cursor, username, request_id):
     try:
         query = """
-            SELECT 1
+            SELECT id
             FROM users
             WHERE username = %s
             LIMIT 1;
@@ -71,6 +71,25 @@ def does_username_exist(final_response, conn, cursor, username, request_id):
         final_response["data"] = cursor.fetchone()
     except:
         logger.exception(f"{request_id} - an error occurred while trying to check if username exists")
+        final_response["ok"] = False
+
+    return final_response
+
+@DatabaseUtils.with_db_connection
+def update_user(final_response, conn, cursor, update_columns, update_values, request_id):
+    try:
+        query = f"""
+            UPDATE user_information
+            SET updated_at = NOW(),
+                {update_columns}
+            WHERE user_id = %s
+        """
+        values = tuple(update_values)
+
+        cursor.execute(query, values)
+        conn.commit()
+    except:
+        logger.exception(f"{request_id} - an error occurred while trying to finish this class")
         final_response["ok"] = False
 
     return final_response
