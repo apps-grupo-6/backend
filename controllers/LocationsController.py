@@ -11,7 +11,7 @@ bp = Blueprint('locations', __name__)
 
 @bp.post("/")
 @ServerUtils.configure_request(description_code_map=LocationsConfig.create_location_code_map, method="POST")
-@AuthUtils.jwt_token_required
+@AuthUtils.validate_session
 def create_location():
     try:
         logger.info(f"{g.request_id} - starting create_location")

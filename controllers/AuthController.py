@@ -29,7 +29,7 @@ def login():
     return AuthService.login(model=model, request_id=g.request_id)
 
 @bp.post("/otp")
-@AuthUtils.jwt_token_required
+@AuthUtils.validate_session
 @ServerUtils.configure_request(description_code_map=AuthConfig.login_otp_code_map, method="POST", endpoint="otp")
 def login_otp():
     try:

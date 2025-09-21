@@ -7,7 +7,7 @@ from configs.ServerConfig import logger
 from repositories import AuthRepository
 from utils import ServerUtils
 
-def jwt_token_required(func):
+def validate_session(func):
     @wraps(func)
     def wrapper(*args, **kwargs):
         logger.info(f"{g.request_id} - checking jwt token")
