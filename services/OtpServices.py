@@ -48,19 +48,19 @@ def create_otp(model, user_id, request_id):
     if otp_token_save["error"]:
         return {}
 
-    #g.send_email_data = {
-    #    "otp_token": otp_token,
-    #    "user_email": user_contact["data"]["contact_email"],
-   #     "user_firstname": user_contact["data"]["first_name"],
-    #    "user_lastname": user_contact["data"]["last_name"]
-    #}
+    g.send_email_data = {
+        "otp_token": otp_token,
+        "user_email": user_contact["data"]["contact_email"],
+        "user_firstname": user_contact["data"]["first_name"],
+        "user_lastname": user_contact["data"]["last_name"]
+    }
 
-    #if type == "LOGIN":
-    #    g.send_email_data["subject"] = "Código de inicio de sesión para Excuses 404"
-     #   g.send_email_data["html_content"] = OtpTemplate.render_login_otp_email(otp_code=otp_token)
-    #else:
-    #    g.send_email_data["subject"] = "Código de recuperación de cuenta para Excuses 404"
-    #    g.send_email_data["html_content"] = OtpTemplate.render_account_recovery_email(otp_code=otp_token)
+    if type == "LOGIN":
+        g.send_email_data["subject"] = "Código de inicio de sesión para Excuses 404"
+        g.send_email_data["html_content"] = OtpTemplate.render_login_otp_email(otp_code=otp_token)
+    else:
+        g.send_email_data["subject"] = "Código de recuperación de cuenta para Excuses 404"
+        g.send_email_data["html_content"] = OtpTemplate.render_account_recovery_email(otp_code=otp_token)
 
     g.response_code = "0200"
     return {}

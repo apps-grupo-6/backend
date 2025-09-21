@@ -24,7 +24,9 @@ login_otp_code_map = {
 
 refresh_token_code_map = {
     "0200": ("ok", 200),
-    "0400": ("bad request", 400)
+    "0400": ("bad request", 400),
+    "0410": ("requested jwt token is valid and did not expire yet", 400),
+    "0411": ("requested jwt token is invalid", 400)
 }
 
 recover_account_code_map = {

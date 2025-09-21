@@ -28,7 +28,7 @@ def login(model, request_id):
 
     logger.info(f"{request_id} - checking password...")
     if not UsersUtils.verify_password(plain_password=password, hashed_password=get_user_info["data"]["password"]):
-        logger.critical(f"{request_id} - the password is incorrect")
+        logger.error(f"{request_id} - the password is incorrect")
         g.response_code = "0410"
         return {}
 
@@ -66,7 +66,7 @@ def login_otp(model, user_id, request_id):
 
     logger.info(f"{request_id} - checking if otp token is valid...")
     if OtpUtils.check_token_expired(checked=get_user_token):
-        logger.info(f"{request_id} - user's login otp_token is expired")
+        logger.error(f"{request_id} - user's login otp_token is expired")
         g.response_code = "0410"
         return {}
 
@@ -86,10 +86,20 @@ def login_otp(model, user_id, request_id):
 def refresh_token(model, request_id):
     jwt_token = model["jwt_token"]
 
-    logger.info(f"{request_id} - refreshing jwt token...")
+    logger.info(f"{request_id} - checking if needed to refresh jwt token...")
     decoded = AuthUtils.check_jwt_token(jwt_token)
+
     if decoded["error"]:
-        return decoded["error"], 401
+        if decoded["error_code"] == 0:
+            logger.error(f"{request_id} - the requested jwt token is valid and did not expire yet")
+            g.response_code = "0410"
+        else:
+            logger.error(f"{request_id} - the requested jwt token is invalid")
+            g.response_code = "0411"
+
+        return {}
+    else:
+        logger.debug(f"{g.request_id} - jwt token is expired (ok)")
 
     decoded["data"]["exp"] += AuthConfig.jwt_exp_delta_seconds
     refreshed = jwt.encode(decoded, AuthConfig.jwt_secret, algorithm=AuthConfig.jwt_algorithm)

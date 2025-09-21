@@ -10,97 +10,104 @@ from utils import ServerUtils
 def validate_session(func):
     @wraps(func)
     def wrapper(*args, **kwargs):
-        decoded = check_jwt_token()
-        if decoded["error"]:
-            return decoded["error"], 401
-        logger.info(decoded)
-        user_id = decoded["data"]["data"]["user_id"]
+        logger.info(f"{g.request_id} - checking jwt token")
+        auth_header = request.headers.get("Authorization", None)
 
-        logger.info(f"{g.request_id} - endpoint requested by user_id: '{user_id}'")
+        if not auth_header or not auth_header.startswith("Bearer "):
+            logger.error(f"{g.request_id} - jwt token is absent")
+            g.response_code = '0401'
+            return {"code": "0401", "description": "Authorization header missing or invalid"}, 401
 
-        logger.info(f"{g.request_id} - checking if user exists...")
-        str_user_id = str(user_id)
-        if not str_user_id in ServerUtils.USERS_DATA["data"]: # maybe user registered between retrieving users cron execution
-            exists = AuthRepository.check_if_user_exists(user_id=user_id, request_id=g.request_id)
+        try:
+            token = auth_header.split(" ")[1]
+            decoded = jwt.decode(token, AuthConfig.jwt_secret, algorithms=[AuthConfig.jwt_algorithm])
+            user_id = decoded["user_id"]
+            logger.debug(f"{g.request_id} - jwt token is valid")
 
-            if not exists["ok"]:
-                logger.critical(f"{g.request_id} - an error occurred while checking")
-                g.response_code = '-1'
-                return {"code": "0500", "description": "the request could not be processed"}, 500
+            logger.info(f"{g.request_id} - endpoint requested by user_id: '{user_id}'")
 
-            if not exists["data"]:
-                g.alert_description = f"user_id '{user_id}' tried to login with a valid jwt token but this user_id is not registered in our database"
-                logger.critical(f"{g.request_id} - [SECURITY BREACH] {g.alert_description}")
-                g.response_code = '9999'
-                return {"code": "0501", "description": "the request could not be processed"}, 500
+            logger.info(f"{g.request_id} - checking if user exists...")
+            str_user_id = str(user_id)
+            if not str_user_id in ServerUtils.USERS_DATA["data"]: # maybe user registered between retrieving users cron execution
+                exists = AuthRepository.check_if_user_exists(user_id=user_id, request_id=g.request_id)
 
-            user_data = exists["data"]
-        else:
-            user_data = ServerUtils.USERS_DATA["data"][str_user_id]
+                if not exists["ok"]:
+                    logger.critical(f"{g.request_id} - an error occurred while checking")
+                    g.response_code = '-1'
+                    return {"code": "0500", "description": "the request could not be processed"}, 500
 
-        logger.debug(f"{g.request_id} - user_id exists")
-        g.user_id = user_id
-        g.user_data = user_data
+                if not exists["data"]:
+                    g.alert_description = f"user_id '{user_id}' tried to login with a valid jwt token but this user_id is not registered in our database"
+                    logger.critical(f"{g.request_id} - [SECURITY BREACH] {g.alert_description}")
+                    g.response_code = '9999'
+                    return {"code": "0501", "description": "the request could not be processed"}, 500
 
-        #if user_data["banned"]: #if user was banned
-        #    logger.error(f"{g.request_id} - user_id is banned")
-        #    g.response_code = '9998'
-        #    return {"code": "0403", "description": "the request could not be processed due to user_id is banned"}, 403
+                user_data = exists["data"]
+            else:
+                user_data = ServerUtils.USERS_DATA["data"][str_user_id]
 
-        if user_data["suspect"]: #if user was flagged as suspect
-            logger.warning(f"{g.request_id} - user_id '{user_id}' is flagged as suspect")
+            logger.debug(f"{g.request_id} - user_id exists")
+            g.user_id = user_id
+            g.user_data = user_data
 
-        if user_id not in ServerUtils.BACKEND_DEVELOPERS:
-            user_permissions = user_data["permissions"]
-            check_endpoint = f"{g.method}-{g.endpoint}"
+            if user_data["banned"]: #if user was banned
+                logger.error(f"{g.request_id} - user_id is banned")
+                g.response_code = '9998'
+                return {"code": "0403", "description": "the request could not be processed due to user_id is banned"}, 403
 
-            if g.endpoint_id_list:
-                id = g.endpoint_id_list[0]
-                check_endpoint = check_endpoint.replace(id, "<id>")
+            if user_data["suspect"]: #if user was flagged as suspect
+                logger.warning(f"{g.request_id} - user_id '{user_id}' is flagged as suspect")
 
-            if check_endpoint[-1] == "/":
-                check_endpoint = check_endpoint[:-1]
+            if user_id not in ServerUtils.BACKEND_DEVELOPERS:
+                user_permissions = user_data["permissions"]
+                check_endpoint = f"{g.method}-{g.endpoint}"
 
-            if check_endpoint not in user_permissions:
-                logger.error(f"{g.request_id} - user_id '{user_id}' cannot use endpoint: '{check_endpoint}'")
-                g.response_code = "9999"
-                g.alert_description = f"user_id '{user_id}' tried to use a endpoint but its role does not allows it."
-                return {"code": "0403", "description": "you are not allowed to use this function"}, 403
-        else:
-            logger.debug(f"this request was done by a backend developer with the user_id '{user_id}'")
+                if g.endpoint_id_list:
+                    id = g.endpoint_id_list[0]
+                    check_endpoint = check_endpoint.replace(id, "<id>")
+
+                if check_endpoint[-1] == "/":
+                    check_endpoint = check_endpoint[:-1]
+
+                if check_endpoint not in user_permissions:
+                    logger.error(f"{g.request_id} - user_id '{user_id}' cannot use endpoint: '{check_endpoint}'")
+                    g.response_code = "9999"
+                    g.alert_description = f"user_id '{user_id}' tried to use a endpoint but its role does not allows it."
+                    return {"code": "0403", "description": "you are not allowed to use this function"}, 403
+            else:
+                logger.debug(f"this request was done by a backend developer with the user_id '{user_id}'")
+
+        except jwt.ExpiredSignatureError:
+            logger.error(f"{g.request_id} - jwt token has expired")
+            g.response_code = '0401'
+            return {"code": "0401", "description": "token has expired"}, 401
+        except jwt.InvalidTokenError:
+            logger.error(f"{g.request_id} - jwt token is invalid")
+            g.response_code = '0401'
+            return {"code": "0401", "description": "invalid jwt token"}, 401
 
         return func(*args, **kwargs)
 
     return wrapper
 
 def check_jwt_token(jwt_token=""):
-    logger.info(f"{g.request_id} - checking jwt token")
     final_response = {
         "data": {},
-        "error": {}
+        "error": True,
+        "error_code": -1
     }
 
-    if not jwt_token:
-        jwt_token = request.headers.get("Authorization", None)
-
-        if not jwt_token or not jwt_token.startswith("Bearer "):
-            logger.error(f"{g.request_id} - jwt token is absent")
-            g.response_code = '0401'
-            final_response["error"] = {"code": "0401", "description": "Authorization header missing or invalid"}
-            return final_response
+    if jwt_token.startswith("Bearer"):
+        jwt_token = jwt_token.split(" ")[1]
 
     try:
-        token = jwt_token.split(" ")[1]
-        decode = jwt.decode(token, AuthConfig.jwt_secret, algorithms=[AuthConfig.jwt_algorithm])
-        logger.debug(f"{g.request_id} - jwt token is valid")
-        final_response["data"] = decode
+        jwt.decode(jwt_token, AuthConfig.jwt_secret, algorithms=[AuthConfig.jwt_algorithm])
+        final_response["error_code"] = 0
     except jwt.ExpiredSignatureError:
-        logger.error(f"{g.request_id} - jwt token has expired")
-        g.response_code = '0401'
-        final_response["error"] = {"code": "0401", "description": "token has expired"}
+        decoded = jwt.decode(jwt_token, options={"verify_signature": False})
+        final_response["data"] = decoded
+        final_response["error"] = False
     except jwt.InvalidTokenError:
-        logger.error(f"{g.request_id} - jwt token is invalid")
-        g.response_code = '0401'
-        final_response["error"] = {"code": "0401", "description": "invalid jwt token"}
+        final_response["error_code"] = 1
 
     return final_response
