@@ -1,7 +1,7 @@
 from configs.ServerConfig import logger
-from utils.DatabaseUtils import with_db_connection
+from utils import DatabaseUtils
 
-@with_db_connection
+@DatabaseUtils.with_db_connection
 def register_account(final_response, conn, cursor, username, password, first_name,
                      last_name, telephone, email, request_id):
     try:
@@ -18,11 +18,11 @@ def register_account(final_response, conn, cursor, username, password, first_nam
 
     return final_response
 
-@with_db_connection
-def get_user_contact_information(final_response, conn, cursor, user_id, request_id):
+@DatabaseUtils.with_db_connection
+def get_user_information(final_response, conn, cursor, user_id, request_id):
     try:
         query = """
-            SELECT contact_email, first_name, last_name
+            SELECT contact_email, first_name, last_name, telephone
             FROM user_information
             WHERE user_id = %s
             LIMIT 1;
@@ -37,7 +37,7 @@ def get_user_contact_information(final_response, conn, cursor, user_id, request_
 
     return final_response
 
-@with_db_connection
+@DatabaseUtils.with_db_connection
 def does_user_exist(final_response, conn, cursor, user_id, request_id):
     try:
         query = """
@@ -52,6 +52,44 @@ def does_user_exist(final_response, conn, cursor, user_id, request_id):
         final_response["data"] = cursor.fetchone()
     except:
         logger.exception(f"{request_id} - an error occurred while trying to check if user exists")
+        final_response["ok"] = False
+
+    return final_response
+
+@DatabaseUtils.with_db_connection
+def does_username_exist(final_response, conn, cursor, username, request_id):
+    try:
+        query = """
+            SELECT id
+            FROM users
+            WHERE username = %s
+            LIMIT 1;
+        """
+        values = (username,)
+
+        cursor.execute(query, values)
+        final_response["data"] = cursor.fetchone()
+    except:
+        logger.exception(f"{request_id} - an error occurred while trying to check if username exists")
+        final_response["ok"] = False
+
+    return final_response
+
+@DatabaseUtils.with_db_connection
+def update_user(final_response, conn, cursor, update_columns, update_values, request_id):
+    try:
+        query = f"""
+            UPDATE user_information
+            SET updated_at = NOW(),
+                {update_columns}
+            WHERE user_id = %s
+        """
+        values = tuple(update_values)
+
+        cursor.execute(query, values)
+        conn.commit()
+    except:
+        logger.exception(f"{request_id} - an error occurred while trying to finish this class")
         final_response["ok"] = False
 
     return final_response

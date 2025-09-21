@@ -1,14 +1,18 @@
 from flask import Blueprint, g, request
 from marshmallow import ValidationError
+
 from configs.ServerConfig import logger
 
 from services import OtpServices
-from models import OtpModel
 from configs import OtpConfig
+from utils import AuthUtils, ServerUtils
+from models import OtpModel
 
 bp = Blueprint('otp', __name__)
 
 @bp.post("/")
+@ServerUtils.configure_request(description_code_map=OtpConfig.create_otp_code_map, method="POST")
+@AuthUtils.validate_session
 def create_otp():
     try:
         logger.info(f"{g.request_id} - starting create_otp")
@@ -20,10 +24,8 @@ def create_otp():
         logger.exception(f"{g.request_id} - there are absent mandatory fields")
         g.response_code = "0400"
         return {
-            "code": "0400",
-            "description": OtpConfig.create_otp_code_map["0400"],
             "detailed_description": e.messages
-        }, 400
+        }
 
     logger.info(f"{g.request_id} - finished mandatory fields check")
-    return OtpServices.create_otp(model=model, request_id=g.request_id)
+    return OtpServices.create_otp(model=model, user_id=g.user_id, request_id=g.request_id)

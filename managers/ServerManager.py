@@ -2,50 +2,24 @@ from configs.ServerConfig import logger
 from utils import DatabaseUtils
 
 @DatabaseUtils.with_db_connection
-def get_username_info(final_response, conn, cursor, username, request_id):
+def create_request_log(final_response, conn, cursor, user_id, method, endpoint, code, execution_time, request_id):
     try:
         query = """
-            SELECT 
-                id as user_id, 
-                password
-            FROM users
-            WHERE username = %s
-            LIMIT 1;
+            INSERT INTO requests (id, user_id, method, endpoint, code, execution_time)
+            VALUES (%s, %s, %s, %s, %s, %s)
         """
-        values = (username,)
+        values = (request_id, user_id, method, endpoint, code, execution_time)
 
         cursor.execute(query, values)
-        final_response["data"] = cursor.fetchone()
+        conn.commit()
     except:
-        logger.exception(f"{request_id} - an error occurred while registering the user")
+        logger.exception(f"{request_id} - an error occurred while creating the log")
         final_response["ok"] = False
 
     return final_response
 
 @DatabaseUtils.with_db_connection
-def check_otp_token(final_response, conn, cursor, user_id, otp_token, type, request_id):
-    try:
-        query = """
-            SELECT expires_at
-            FROM otp_tokens
-            WHERE 
-                user_id = %s
-                AND token = %s
-                AND type = %s
-            LIMIT 1;
-        """
-        values = (user_id, otp_token, type)
-
-        cursor.execute(query, values)
-        final_response["data"] = cursor.fetchone()
-    except:
-        logger.exception(f"{request_id} - an error occurred while checking user otp token")
-        final_response["ok"] = False
-
-    return final_response
-
-@DatabaseUtils.with_db_connection
-def check_if_user_exists(final_response, conn, cursor, user_id, request_id):
+def get_users(final_response, conn, cursor):
     try:
         query = """
             SELECT jsonb_object_agg(user_id, payload) AS data
@@ -63,10 +37,9 @@ def check_if_user_exists(final_response, conn, cursor, user_id, request_id):
                             'telephone', ui.telephone
                         ),
                         'permissions', COALESCE(
-                            jsonb_agg(
-                                jsonb_build_object(up.method || '-' || up.endpoint, up.id)
-                            ) FILTER (WHERE up.id IS NOT NULL),
-                            '[]'::jsonb
+                            jsonb_object_agg(rp.method || '-' || rp.endpoint, rp.id
+                            ) FILTER (WHERE rp.id IS NOT NULL),
+                            '{}'::jsonb
                         ),
                         'roles', COALESCE(
                             jsonb_agg(DISTINCT r.name)
@@ -77,41 +50,59 @@ def check_if_user_exists(final_response, conn, cursor, user_id, request_id):
                 FROM users u
                 JOIN user_information ui ON ui.user_id = u.id
                 JOIN user_controls uc ON uc.user_id = u.id
-                LEFT JOIN user_permissions up ON up.user_id = u.id
                 LEFT JOIN user_roles ur ON ur.user_id = u.id
                 LEFT JOIN roles r ON r.id = ur.role_id
+                LEFT JOIN role_permissions rp ON rp.role_id = r.id
                 GROUP BY
                     u.id,
                     uc.is_banned, uc.is_suspicious, uc.force_disconnect,
                     ui.first_name, ui.last_name, ui.contact_email, ui.telephone
             ) t;
         """
-        values = (user_id,)
-
-        logger.info(query%values)
-        cursor.execute(query, values)
-        final_response["data"] = cursor.fetchone()
+        cursor.execute(query)
+        final_response["data"] = cursor.fetchall()[0]
     except:
-        logger.exception(f"{request_id} - an error occurred while checking if user exists")
+        logger.exception(f"an error occurred while retrieving all users")
         final_response["ok"] = False
 
     return final_response
 
 @DatabaseUtils.with_db_connection
-def set_new_password(final_response, conn, cursor, new_password, user_id, request_id):
+def set_user_as_suspect(final_response, conn, cursor, user_id, request_id):
     try:
-        query = f"""
-            UPDATE users
-            SET password_updated_at = NOW(),
-                password = %s
-            WHERE id = %s
+        query = """
+            UPDATE user_controls
+            SET 
+                is_suspicious = TRUE,
+                suspicious_request_id = %s
+            WHERE user_id = %s
         """
-        values = (new_password, user_id)
+        values = (request_id, user_id)
 
         cursor.execute(query, values)
         conn.commit()
     except:
-        logger.exception(f"{request_id} - an error occurred while trying to update user's password")
+        logger.exception(f"{request_id} - an error occurred while setting user as suspect")
+        final_response["ok"] = False
+
+    return final_response
+
+@DatabaseUtils.with_db_connection
+def set_user_as_banned(final_response, conn, cursor, user_id, request_id):
+    try:
+        query = """
+            UPDATE user_controls
+            SET 
+                is_banned = TRUE,
+                ban_request_id = %s
+            WHERE user_id = %s
+        """
+        values = (request_id, user_id)
+
+        cursor.execute(query, values)
+        conn.commit()
+    except:
+        logger.exception(f"{request_id} - an error occurred while banning this user")
         final_response["ok"] = False
 
     return final_response

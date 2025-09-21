@@ -1,9 +1,24 @@
-from configs.ServerConfig import logger
-from flask import g
 import datetime
 
-from managers import ClassesManager, UsersManager, LocationsManager, DisciplinesManager
-from configs import ClassesConfig
+from configs.ServerConfig import logger
+from flask import g
+
+from repositories import ClassesRepository, UsersRepository, LocationsRepository, DisciplinesRepository
+from utils import ClassesUtils
+
+def get_all_classes(request_id):
+    # Created by Luciana
+    classes_result = ClassesRepository.get_all_classes(request_id=request_id,
+                                                       errors_code_map={"database_error_code": "0500"})
+    if classes_result["error"]:
+        return {}
+
+    classes_data = classes_result["data"] or []
+
+    g.response_code = "0200"
+    return {
+        "data": classes_data
+    }
 
 def create_class(model, request_id):
     professor_id = model["professor_id"]
@@ -13,209 +28,325 @@ def create_class(model, request_id):
     max_participants = model["max_participants"]
     qr = model["qr"]
 
-    logger.info(f"{request_id} - validating if user_id '{professor_id}' exists...")
-    user_exist = UsersManager.does_user_exist(user_id=professor_id, request_id=request_id)
-    if not user_exist["ok"]:
-        logger.critical(f"{request_id} - there was an error while checking")
-        g.response_code = "0500"
-        return {"code": "0500", "description": ClassesConfig.create_class_code_map["0500"]}, 500
+    is_duplicated = ClassesRepository.check_if_duplicated(professor_id=professor_id,
+                                                          location_id=location_id,
+                                                          discipline_id=discipline_id,
+                                                          scheduled_at=scheduled_at,
+                                                          request_id=request_id,
+                                                          errors_code_map={
+                                                              "database_error_code": "0500",
+                                                              "invalid_data_error_code": "0410"
+                                                          })
 
-    if not user_exist["data"]:
-        logger.critical(f"{request_id} - invalid user_id")
-        g.response_code = "0410"
-        return {"code": "0410", "description": ClassesConfig.create_class_code_map["0410"]}, 400
+    if is_duplicated["error"]:
+        return {}
 
-    logger.info(f"{request_id} - validating if location_id '{location_id}' exists...")
-    location_exist = LocationsManager.does_location_exist(location_id=location_id, request_id=request_id)
-    if not location_exist["ok"]:
-        logger.critical(f"{request_id} - there was an error while checking")
-        g.response_code = "0501"
-        return {"code": "0501", "description": ClassesConfig.create_class_code_map["0501"]}, 500
+    exists_user = UsersRepository.check_if_user_exists(user_id=professor_id,
+                                                       request_id=request_id,
+                                                       errors_code_map={
+                                                           "database_error_code": "0501",
+                                                           "invalid_data_error_code": "0404"
+                                                       })
 
-    if not location_exist["data"]:
-        logger.critical(f"{request_id} - invalid location_id")
-        g.response_code = "0411"
-        return {"code": "0411", "description": ClassesConfig.create_class_code_map["0411"]}, 400
+    if exists_user["error"]:
+        return {}
 
-    logger.info(f"{request_id} - validating if discipline_id '{discipline_id}' exists...")
-    discipline_exist = DisciplinesManager.does_disciplines_exist(discipline_id=discipline_id, request_id=request_id)
-    if not discipline_exist["ok"]:
-        logger.critical(f"{request_id} - there was an error while checking")
-        g.response_code = "0502"
-        return {"code": "0502", "description": ClassesConfig.create_class_code_map["0502"]}, 500
+    exists_location = LocationsRepository.check_if_location_exists(location_id=location_id,
+                                                                   request_id=request_id,
+                                                                   errors_code_map={
+                                                                       "database_error_code": "0502",
+                                                                       "invalid_data_error_code": "0405"
+                                                                   })
 
-    if not discipline_exist["data"]:
-        logger.critical(f"{request_id} - invalid discipline_id")
-        g.response_code = "0412"
-        return {"code": "0412", "description": ClassesConfig.create_class_code_map["0412"]}, 400
+    if exists_location["error"]:
+        return {}
 
-    logger.info(f"{request_id} - checking if exists a duplicated class with this data...")
-    is_repeated = ClassesManager.check_if_repeated(professor_id=professor_id,
+    exists_discipline = DisciplinesRepository.check_if_discipline_exists(discipline_id=discipline_id,
+                                                                         request_id=request_id,
+                                                                         errors_code_map={
+                                                                             "database_error_code": "0503",
+                                                                             "invalid_data_error_code": "0406"
+                                                                         })
+
+    if exists_discipline["error"]:
+        return {}
+
+    created_class = ClassesRepository.create_class(qr=qr,
+                                                   professor_id=professor_id,
                                                    location_id=location_id,
                                                    discipline_id=discipline_id,
-                                                   request_id=request_id)
+                                                   scheduled_at=scheduled_at,
+                                                   max_participants=max_participants,
+                                                   request_id=request_id,
+                                                   errors_code_map={"database_error_code": "0504"})
 
-    if not is_repeated["ok"]:
-        logger.critical(f"{request_id} - there was an error while checking")
-        g.response_code = "0503"
-        return {"code": "0503", "description": ClassesConfig.create_class_code_map["0503"]}, 500
+    if created_class["error"]:
+        return {}
 
-    if is_repeated["data"]:
-        logger.info(f"{request_id} - there is a duplicated class")
+    g.response_code = "0200"
+    return {}
 
-        if not is_repeated["data"]["ended_at"]:
-            logger.info(f"{request_id} - the class did not finish yet")
-            scheduled_at_formatted = datetime.datetime.strptime(scheduled_at, "%Y-%m-%d %H:%M:%S")
-            seconds_diff = scheduled_at_formatted - is_repeated["data"]["scheduled_at"]
-            minutes_diff = seconds_diff.total_seconds() / 60
-
-            if minutes_diff < 30:
-                logger.error(f"{request_id} - to register the same class but different scheduled_at, you must send it with atleast 30 minutes difference")
-                g.response_code = "0414"
-                return {"code": "0414", "description": ClassesConfig.create_class_code_map["0414"]}, 400
-        else:
-            logger.info(f"{request_id} - the class is finished")
-            g.response_code = "0413"
-            return {"code": "0413", "description": ClassesConfig.create_class_code_map["0413"]}, 400
-
-    logger.info(f"{request_id} - creating class...")
-    created = ClassesManager.create_class(qr=qr,
-                                          professor_id=professor_id,
-                                          location_id=location_id,
-                                          discipline_id=discipline_id,
-                                          scheduled_at=scheduled_at,
-                                          max_participants=max_participants,
-                                          request_id=request_id)
-
-    if not created["ok"]:
-        logger.critical(f"{request_id} - there was an error while creating class")
-        g.response_code = "0504"
-        return {"code": "0504", "description": ClassesConfig.create_class_code_map["0504"]}, 500
+def get_user_upcoming_classes(user_id, request_id):
+    upcoming_user_classes = ClassesRepository.get_user_upcoming_classes(user_id=user_id,
+                                                                        request_id=request_id,
+                                                                        errors_code_map={"database_error_code": "0500"})
+    if upcoming_user_classes["error"]:
+        return {}
 
     g.response_code = "0200"
     return {
-        "code": "0200",
-        "description": ClassesConfig.create_class_code_map["0200"]
-    }, 200
+        "data": upcoming_user_classes["data"]
+    }
 
-def finish_class(model, request_id):
-    class_id = model["class_id"]
+def get_class(class_id, request_id):
+    class_information = ClassesUtils.check_and_get_class_information(class_id=class_id,
+                                                                     request_id=request_id,
+                                                                     error_code_maps={
+                                                                         "database_error_code": "0500",
+                                                                         "invalid_data_error_code": "0404"
+                                                                     })
 
-    logger.info(f"{request_id} - checking if class_id '{class_id}' exists...")
-    class_exist = ClassesManager.does_class_exist(class_id=class_id, request_id=request_id)
-    if not class_exist["ok"]:
-        logger.critical(f"{request_id} - there was an error while checking")
-        g.response_code = "0500"
-        return {"code": "0500", "description": ClassesConfig.finish_class_code_map["0500"]}, 500
+    if class_information["error"]:
+        return {}
 
-    if not class_exist["data"]:
-        logger.critical(f"{request_id} - invalid class_id")
-        g.response_code = "0410"
-        return {"code": "0410", "description": ClassesConfig.finish_class_code_map["0410"]}, 400
-
-    logger.info(f"{request_id} - obtaining class_id information to check if finished...")
-    get_info = ClassesManager.get_class_info(class_id=class_id, request_id=request_id)
-    if not get_info["ok"]:
-        logger.critical(f"{request_id} - there was an error while obtaining")
-        g.response_code = "0501"
-        return {"code": "0501", "description": ClassesConfig.finish_class_code_map["0501"]}, 500
-
-    if get_info["data"]["ended_at"]:
-        logger.info(f"{request_id} - this class is already finished")
-        g.response_code = "0411"
-        return {"code": "0411", "description": ClassesConfig.finish_class_code_map["0411"]}, 400
-
-    logger.info(f"{request_id} - finishing class...")
-    finished_class = ClassesManager.finish_class(class_id=class_id, request_id=request_id)
-    if not finished_class["ok"]:
-        logger.critical(f"{request_id} - there was an error while updating")
-        g.response_code = "0502"
-        return {"code": "0502", "description": ClassesConfig.finish_class_code_map["0502"]}, 500
-
-    logger.info(f"{request_id} - class finished successfully")
     g.response_code = "0200"
     return {
-        "code": "0200",
-        "description": ClassesConfig.finish_class_code_map["0200"]
-    }, 200
+        "data": class_information["data"] or []
+    }
 
-def update_class(model, request_id):
-    class_id = model["class_id"]
+def update_class(model, class_id, user_id, request_id):
     qr = model["qr"]
 
-    logger.info(f"{request_id} - an update was requested for class '{class_id}'")
-    columns = []
-    values = []
-    for key in model:
-        if model[key] and key != "class_id":
-            columns.append(f"{key} = %s")
-            values.append(model[key])
+    class_information = ClassesUtils.check_and_get_class_information(class_id=class_id,
+                                                                     request_id=request_id,
+                                                                     error_code_maps={
+                                                                         "database_error_code": "0500",
+                                                                         "invalid_data_error_code": "0404"
+                                                                     })
+
+    if class_information["error"]:
+        return {}
+
+    professor_id = class_information["data"]["professor_id"]
+    if not user_id == professor_id:
+        g.alert_description = f"user_id '{user_id}' tried to update class '{class_id}' which professor_id is '{professor_id}'"
+        logger.critical(f"{request_id} - [SECURITY BREACH] {g.alert_description}")
+        g.response_code = "9999"
+        return {}
+
+    logger.info(f"{request_id} - formatting fields...")
+    formatted_update = ClassesUtils.update_class_fields_formatter(model=model, request_id=request_id)
+    error = formatted_update["error"]
+    columns = formatted_update["columns"]
+    values = formatted_update["values"]
+
+    if error:
+        return {}
 
     if not columns:
         logger.error(f"{request_id} - all updatable fields are empty")
         g.response_code = "0410"
-        return {"code": "0410", "description": ClassesConfig.update_class_code_map["0410"]}, 400
+        return {}
 
-    logger.info(f"{request_id} - checking if this class_id exists...")
-    class_exist = ClassesManager.does_class_exist(class_id=class_id, request_id=request_id)
-    if not class_exist["ok"]:
-        logger.critical(f"{request_id} - there was an error while checking")
-        g.response_code = "0500"
-        return {"code": "0500", "description": ClassesConfig.update_class_code_map["0500"]}, 500
+    if "scheduled_at" in model:
+        if model["scheduled_at"] <= class_information["data"]["scheduled_at"]:
+            logger.error(f"{request_id} - scheduled_at cannot be earlier than the current scheduled_at")
+            g.response_code = "0412"
+            return {}
 
-    if not class_exist["data"]:
-        logger.critical(f"{request_id} - invalid class_id")
+        if model["scheduled_at"] < datetime.datetime.now():
+            logger.error(f"{request_id} - scheduled_at cannot be in the past")
+            g.response_code = "0413"
+            return {}
+
+    if "max_participants" in model:
+        participants = ClassesRepository.get_class_participants(class_id=class_id,
+                                                                request_id=request_id,
+                                                                errors_code_map={"database_error_code": "0504"})
+
+        if participants["error"]:
+            return {}
+
+        if model["max_participants"] > len(participants["data"]):
+            logger.error(f"{request_id} - max_participants cannot be greater than the number of participants")
+            g.response_code = "0414"
+            return {}
+
+    if class_information["data"]["qr"] == qr:
+        logger.error(f"{request_id} - sent qr is equal to actual class qr (if equal, there's no new data)")
         g.response_code = "0411"
-        return {"code": "0411", "description": ClassesConfig.update_class_code_map["0411"]}, 400
+        return {}
 
-    logger.info(f"{request_id} - obtaining class_id information to check it's qr...")
-    get_info = ClassesManager.get_class_info(class_id=class_id, request_id=request_id)
-    if not get_info["ok"]:
-        logger.critical(f"{request_id} - there was an error while obtaining")
-        g.response_code = "0501"
-        return {"code": "0501", "description": ClassesConfig.finish_class_code_map["0501"]}, 500
-
-    logger.info(f"{request_id} - actual class data: {get_info['data']}")
-
-    if get_info["data"]["qr"] == qr:
-        logger.info(f"{request_id} - sent qr is equal to actual class qr (if equal, there's no new data)")
-        g.response_code = "0412"
-        return {"code": "0412", "description": ClassesConfig.finish_class_code_map["0412"]}, 400
-
-    logger.info(f"{request_id} - updating class...")
     update_columns = ", ".join(columns)
     values.append(class_id)
-    updated = ClassesManager.update_class(update_columns=update_columns,
-                                          update_values=values,
-                                          request_id=request_id)
-    if not updated["ok"]:
-        logger.critical(f"{request_id} - there was an error while updating")
-        g.response_code = "0502"
-        return {"code": "0502", "description": ClassesConfig.update_class_code_map["0502"]}, 500
+    logger.debug(f"{request_id} - columns to update: {update_columns}")
+    updated = ClassesRepository.update_class(update_columns=update_columns,
+                                             update_values=values,
+                                             request_id=request_id,
+                                             errors_code_map={"database_error_code": "0505"})
 
-    logger.info(f"{request_id} - class updated successfully")
+    if updated["error"]:
+        return {}
+
     g.response_code = "0200"
-    return {
-        "code": "0200",
-        "description": ClassesConfig.update_class_code_map["0200"]
-    }, 200
+    return {}
 
+def finish_class(class_id, user_id, request_id):
+    class_information = ClassesUtils.check_and_get_class_information(class_id=class_id,
+                                                                     request_id=request_id,
+                                                                     error_code_maps={
+                                                                         "database_error_code": "0500",
+                                                                         "invalid_data_error_code": "0404"
+                                                                     })
 
-def get_all_classes(request_id):
-    logger.info(f"{request_id} - getting all classes...")
-    
-    classes_result = ClassesManager.get_all_classes(request_id=request_id)
-    if not classes_result["ok"]:
-        logger.critical(f"{request_id} - there was an error while getting classes")
-        g.response_code = "0500"
-        return {"code": "0500", "description": "the request could not be processed"}, 500
+    if class_information["error"]:
+        return {}
 
-    classes_data = classes_result["data"] or []
-    
-    logger.info(f"{request_id} - found {len(classes_data)} classes")
+    professor_id = class_information["data"]["professor_id"]
+    if not professor_id == user_id:
+        g.alert_description = f"user_id '{user_id}' tried to finish class_id '{class_id}' which professor_id is '{professor_id}'"
+        logger.critical(f"{request_id} - [SECURITY BREACH] {g.alert_description}")
+        g.response_code = "9999"
+        return {}
+
+    if class_information["data"]["ended_at"]:
+        logger.error(f"{request_id} - class already finished")
+        g.response_code = "0410"
+        return {}
+
+    participants_status = ClassesRepository.update_participants_status(class_id=class_id,
+                                                                       request_id=request_id,
+                                                                       errors_code_map={"database_error_code": "0501"})
+
+    if participants_status["error"]:
+        return {}
+
+    finished_class = ClassesRepository.finish_class(class_id=class_id,
+                                                    request_id=request_id,
+                                                    errors_code_map={"database_error_code": "0502"})
+
+    if finished_class["error"]:
+        return {}
+
     g.response_code = "0200"
-    return {
-        "code": "0200",
-        "description": "ok",
-        "data": classes_data
-    }, 200
+    return {}
+
+def add_class_participant(class_id, user_id, request_id):
+    class_information = ClassesUtils.check_and_get_class_information(class_id=class_id,
+                                                                     request_id=request_id,
+                                                                     error_code_maps={
+                                                                         "database_error_code": "0500",
+                                                                         "invalid_data_error_code": "0404"
+                                                                     })
+
+    if class_information["error"]:
+        return {}
+
+    if class_information["data"] and datetime.datetime.fromisoformat(class_information["data"]["scheduled_at"]) <= datetime.datetime.now():
+        logger.error(f"{request_id} - the class already started")
+        g.response_code = "0410"
+        return {}
+
+    exists_participant = ClassesRepository.check_if_user_doesnt_participant(class_id=class_id,
+                                                                            user_id=user_id,
+                                                                            request_id=request_id,
+                                                                            errors_code_map={
+                                                                                "database_error_code": "0501",
+                                                                                "invalid_data_error_code": "0405"
+                                                                            })
+
+    if exists_participant["error"]:
+        return {}
+
+    class_participants = ClassesRepository.get_class_participants(class_id=class_id,
+                                                                  request_id=request_id,
+                                                                  errors_code_map={"database_error_code": "0502"})
+    if class_participants["error"]:
+        return {}
+
+    if class_participants["data"] and (len(class_participants["data"]) >= class_information["data"]["max_participants"]):
+        logger.error(f"{request_id} - the class is full")
+        g.response_code = "0411"
+        return {}
+
+    added_participant = ClassesRepository.add_class_participant(class_id=class_id,
+                                                                user_id=user_id,
+                                                                request_id=request_id,
+                                                                errors_code_map={"database_error_code": "0503"})
+
+    if added_participant["error"]:
+        return {}
+
+    g.response_code = "0200"
+    return {}
+
+def cancel_participant(class_id, user_id, request_id):
+    exists_class = ClassesRepository.check_if_class_exists(class_id=class_id,
+                                                           request_id=request_id,
+                                                           errors_code_map={
+                                                               "database_error_code": "0500",
+                                                               "invalid_data_error_code": "0404"
+                                                           })
+
+    if exists_class["error"]:
+        return {}
+
+    exists_participant = ClassesRepository.check_if_participant_exists(class_id=class_id,
+                                                                       user_id=user_id,
+                                                                       request_id=request_id,
+                                                                       errors_code_map={
+                                                                           "database_error_code": "0501",
+                                                                           "invalid_data_error_code": "0405",
+                                                                       })
+
+    if exists_participant["error"]:
+        return {}
+
+    cancel_user = ClassesRepository.cancel_participant(class_id=class_id,
+                                                       user_id=user_id,
+                                                       request_id=request_id,
+                                                       errors_code_map={
+                                                           "database_error_code": "0501",
+                                                           "invalid_data_error_code": "0406"
+                                                       })
+
+    if cancel_user["error"]:
+        return {}
+
+    g.response_code = "0200"
+    return {}
+
+def confirm_participant(class_id, user_id, request_id):
+    exists_class = ClassesRepository.check_if_class_exists(class_id=class_id,
+                                                           request_id=request_id,
+                                                           errors_code_map={
+                                                               "database_error_code": "0500",
+                                                               "invalid_data_error_code": "0404"
+                                                           })
+    if exists_class["error"]:
+        return {}
+
+    exists_participant = ClassesRepository.check_if_participant_exists(class_id=class_id,
+                                                                       user_id=user_id,
+                                                                       request_id=request_id,
+                                                                       errors_code_map={
+                                                                           "database_error_code": "0501",
+                                                                           "invalid_data_error_code": "0405",
+                                                                       })
+
+    if exists_participant["error"]:
+        return {}
+
+    confirm_user = ClassesRepository.confirm_participant(class_id=class_id,
+                                                         user_id=user_id,
+                                                         request_id=request_id,
+                                                         errors_code_map={
+                                                             "database_error_code": "0501",
+                                                             "invalid_data_error_code": "0406"
+                                                         })
+
+    if confirm_user["error"]:
+        return {}
+
+    g.response_code = "0200"
+    return {}

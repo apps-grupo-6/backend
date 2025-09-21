@@ -1,92 +1,169 @@
 import datetime, jwt
+from random import shuffle
+
 from flask import g
 from configs.ServerConfig import logger
 
-from utils import UsersUtils
-from managers import AuthManager, OtpManager
+from utils import UsersUtils, AuthUtils, OtpUtils
 from configs import AuthConfig
+from repositories import AuthRepository, OtpRepository, UsersRepository
+
 
 def login(model, request_id):
     username = model["username"]
     password = model["password"]
 
     logger.info(f"{request_id} - '{username}' is trying to login")
-    get_user_info = AuthManager.login(username=username,
-                                      request_id=request_id)
+    get_user_info = AuthRepository.get_username_info(username=username,
+                                                     request_id=request_id,
+                                                     errors_code_map={
+                                                         "database_error_code": "0500",
+                                                         "invalid_data_error_code": "0404"
+                                                     })
+    if get_user_info["error"]:
+        return {}
 
-    if not get_user_info["ok"]:
-        g.response_code = "0500"
-        logger.critical(f"{request_id} - database failed when this user tried to login")
-        return {"code": "0500", "description": AuthConfig.login_code_map["0500"]}, 500
-
-    if not get_user_info["data"]:
-        g.response_code = "0204"
-        logger.critical(f"{request_id} - invalid username")
-        return {"code": "0204", "description": AuthConfig.login_code_map["0204"]}, 204
+    user_id = get_user_info['data']['user_id']
+    g.user_id = user_id
 
     logger.info(f"{request_id} - checking password...")
-    if not UsersUtils.verify_password(plain_password=password,
-                                      hashed_password=get_user_info["data"]["password"]):
+    if not UsersUtils.verify_password(plain_password=password, hashed_password=get_user_info["data"]["password"]):
+        logger.error(f"{request_id} - the password is incorrect")
         g.response_code = "0410"
-        logger.critical(f"{request_id} - the password is incorrect")
-        return {"code": "0410", "description": AuthConfig.login_code_map["0410"]}, 400
+        return {}
 
     payload = {
         "username": username,
-        "exp": datetime.datetime.utcnow() + datetime.timedelta(seconds=AuthConfig.jwt_exp_delta_seconds)
+        "exp": datetime.datetime.utcnow() + datetime.timedelta(seconds=AuthConfig.jwt_exp_delta_seconds),
+        "user_id": user_id
     }
 
-    logger.info(f"{request_id} - generating token...")
+    logger.info(f"{request_id} - generating jwt token...")
     token = jwt.encode(payload, AuthConfig.jwt_secret, algorithm=AuthConfig.jwt_algorithm)
 
     logger.info(f"{request_id} - first step login was done successfully")
     g.response_code = "0200"
     return {
-        "code": "0200",
-        "description": AuthConfig.login_code_map["0200"],
         "data": {
-            "token": token,
-            "user_id": get_user_info["data"]["user_id"]
+            "token": token
         }
-    }, 200
+    }
 
-def login_otp(model, request_id):
-    user_id = model["user_id"]
+def login_otp(model, user_id, request_id):
     otp_token = model["otp_token"]
+    TYPE = "LOGIN"
 
-    logger.info(f"{request_id} - user_id '{user_id}' is trying to login with otp_token '{otp_token}'...")
-    result = AuthManager.login_otp(user_id=user_id,
-                                   otp_token=otp_token,
-                                   request_id=request_id)
+    get_user_token = AuthRepository.check_otp_token(user_id=user_id,
+                                                    otp_token=otp_token,
+                                                    type=TYPE,
+                                                    request_id=request_id,
+                                                    errors_code_map={
+                                                        "database_error_code": "0500",
+                                                        "invalid_data_error_code": "0404"
+                                                    })
+    if get_user_token["error"]:
+        return {}
 
-    if not result["ok"]:
-        g.response_code = "0500"
-        logger.critical(f"{request_id} - database failed when this user tried to login with otp_token")
-        return {"code": "0500", "description": AuthConfig.login_otp_code_map["0500"]}, 500
-
-    if not result["data"]:
+    logger.info(f"{request_id} - checking if otp token is valid...")
+    if OtpUtils.check_token_expired(checked=get_user_token):
+        logger.error(f"{request_id} - user's login otp_token is expired")
         g.response_code = "0410"
-        logger.critical(f"{request_id} - invalid otp_token or user_id")
-        return {"code": "0410", "description": AuthConfig.login_otp_code_map["0410"]}, 400
+        return {}
 
-    if result["data"]["expires_at"] < datetime.datetime.now():
-        logger.info(f"{request_id} - user's otp_token is expired")
-        g.response_code = "0411"
-        return {"code": "0411", "description": AuthConfig.login_otp_code_map["0411"]}, 400
+    deleted = OtpUtils.delete_otp_token(user_id=user_id,
+                                        otp_token=otp_token,
+                                        type=TYPE,
+                                        request_id=request_id,
+                                        errors_code_map={"database_error_code": "0501"})
 
-    logger.info(f"{request_id} - user's otp_token is valid, deleting used otp...")
-    deleted = OtpManager.delete_otp(user_id=user_id,
-                                    otp_token=otp_token,
-                                    request_id=request_id)
+    if not deleted:
+        return {}
 
-    if not deleted["ok"]:
-        logger.critical(f"{request_id} - database failed when deleting used otp_token")
-        g.response_code = "0501"
-        return {"code": "0501", "description": AuthConfig.login_otp_code_map["0501"]}, 500
+    logger.info(f"{request_id} - second login step finished successfully; user has been authenticated")
+    g.response_code = "0200"
+    return {}
 
-    logger.info(f"{request_id} - user logged in successfully")
+def refresh_token(model, request_id):
+    jwt_token = model["jwt_token"]
+
+    logger.info(f"{request_id} - checking if needed to refresh jwt token...")
+    decoded = AuthUtils.check_jwt_token(jwt_token)
+
+    if decoded["error"]:
+        if decoded["error_code"] == 0:
+            logger.error(f"{request_id} - the requested jwt token is valid and did not expire yet")
+            g.response_code = "0410"
+        else:
+            logger.error(f"{request_id} - the requested jwt token is invalid")
+            g.response_code = "0411"
+
+        return {}
+    else:
+        logger.debug(f"{g.request_id} - jwt token is expired (ok)")
+
+    decoded["data"]["exp"] += AuthConfig.jwt_exp_delta_seconds
+    refreshed = jwt.encode(decoded, AuthConfig.jwt_secret, algorithm=AuthConfig.jwt_algorithm)
+
+    logger.debug(f"{request_id} - jwt token refreshed successfully...")
     g.response_code = "0200"
     return {
-        "code": "0200",
-        "description": AuthConfig.login_otp_code_map["0200"],
-    }, 200
+        "data": {
+            "token": refreshed
+        }
+    }
+
+def recover_account(model, request_id):
+    username = model["username"]
+    new_password = model["new_password"]
+    otp_token = model["otp_token"]
+    TYPE = "RECOVER"
+
+    exists_username = UsersRepository.check_if_username_exists(username=username,
+                                                               request_id=request_id,
+                                                               errors_code_map={
+                                                                   "database_error_code": "0500",
+                                                                   "invalid_data_error_code": "0404"
+                                                               })
+
+    if exists_username["error"]:
+        return {}
+
+    user_id = exists_username["data"]["id"]
+    checked = AuthRepository.check_otp_token(user_id=user_id,
+                                             otp_token=otp_token,
+                                             type=TYPE,
+                                             request_id=request_id,
+                                             errors_code_map={
+                                                 "database_error_code": "0501",
+                                                 "invalid_data_error_code": "0405"
+                                             })
+
+    if checked["error"]:
+        return {}
+
+    if OtpUtils.check_token_expired(checked=checked):
+        logger.info(f"{request_id} - user's recovery otp_token is expired")
+        g.response_code = "0410"
+        return {}
+
+    hashed_password = UsersUtils.hash_password(plain_password=new_password)
+    updated = AuthRepository.set_new_password(user_id=user_id,
+                                              new_password=hashed_password,
+                                              request_id=request_id)
+
+    if not updated:
+        logger.critical(f"{request_id} - an error occurred while updating user's password")
+        g.response = "0502"
+        return {}
+
+    deleted = OtpUtils.delete_otp_token(user_id=user_id,
+                                        otp_token=otp_token,
+                                        type=TYPE,
+                                        request_id=request_id,
+                                        errors_code_map={"database_error_code": "0503"})
+
+    if not deleted:
+        return {}
+
+    g.response_code = "0200"
+    return {}

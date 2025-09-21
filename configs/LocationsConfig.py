@@ -1,9 +1,9 @@
 create_location_code_map = {
-    "0200": "ok",
-    "0400": "bad request",
-    "0410": "invalid owner_id",
-    "0500": "the request could not be processed",
-    "0501": "the request could not be processed"
+    "0200": ("ok", 200),
+    "0400": ("bad request", 400),
+    "0410": ("invalid owner_id", 400),
+    "0500": ("the request could not be processed", 500),
+    "0501": ("the request could not be processed", 500)
 }
 
 # ISO 3166-1 with A-2
