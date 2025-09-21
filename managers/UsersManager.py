@@ -1,7 +1,7 @@
 from configs.ServerConfig import logger
-from utils.DatabaseUtils import with_db_connection
+from utils import DatabaseUtils
 
-@with_db_connection
+@DatabaseUtils.with_db_connection
 def register_account(final_response, conn, cursor, username, password, first_name,
                      last_name, telephone, email, request_id):
     try:
@@ -18,7 +18,7 @@ def register_account(final_response, conn, cursor, username, password, first_nam
 
     return final_response
 
-@with_db_connection
+@DatabaseUtils.with_db_connection
 def get_user_information(final_response, conn, cursor, user_id, request_id):
     try:
         query = """
@@ -37,7 +37,7 @@ def get_user_information(final_response, conn, cursor, user_id, request_id):
 
     return final_response
 
-@with_db_connection
+@DatabaseUtils.with_db_connection
 def does_user_exist(final_response, conn, cursor, user_id, request_id):
     try:
         query = """
@@ -56,7 +56,7 @@ def does_user_exist(final_response, conn, cursor, user_id, request_id):
 
     return final_response
 
-@with_db_connection
+@DatabaseUtils.with_db_connection
 def does_username_exist(final_response, conn, cursor, username, request_id):
     try:
         query = """

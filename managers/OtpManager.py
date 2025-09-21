@@ -1,7 +1,7 @@
 from configs.ServerConfig import logger
-from utils.DatabaseUtils import with_db_connection
+from utils import DatabaseUtils
 
-@with_db_connection
+@DatabaseUtils.with_db_connection
 def check_if_user_has_active_otp(final_response, conn, cursor, user_id, request_id):
     try:
         query = """
@@ -20,7 +20,7 @@ def check_if_user_has_active_otp(final_response, conn, cursor, user_id, request_
 
     return final_response
 
-@with_db_connection
+@DatabaseUtils.with_db_connection
 def save_otp(final_response, conn, cursor, user_id, otp_token, request_id):
     try:
         query = """
@@ -41,7 +41,7 @@ def save_otp(final_response, conn, cursor, user_id, otp_token, request_id):
 
     return final_response
 
-@with_db_connection
+@DatabaseUtils.with_db_connection
 def delete_otp(final_response, conn, cursor, user_id, otp_token, request_id):
     try:
         query = """

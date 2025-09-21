@@ -1,7 +1,7 @@
 from configs.ServerConfig import logger
-from utils.DatabaseUtils import with_db_connection
+from utils import DatabaseUtils
 
-@with_db_connection
+@DatabaseUtils.with_db_connection
 def does_disciplines_exist(final_response, conn, cursor, discipline_id, request_id):
     try:
         query = """

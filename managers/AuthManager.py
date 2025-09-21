@@ -1,7 +1,7 @@
 from configs.ServerConfig import logger
-from utils.DatabaseUtils import with_db_connection
+from utils import DatabaseUtils
 
-@with_db_connection
+@DatabaseUtils.with_db_connection
 def get_username_info(final_response, conn, cursor, username, request_id):
     try:
         query = """
@@ -22,7 +22,7 @@ def get_username_info(final_response, conn, cursor, username, request_id):
 
     return final_response
 
-@with_db_connection
+@DatabaseUtils.with_db_connection
 def check_otp_token(final_response, conn, cursor, user_id, otp_token, request_id):
     try:
         query = """
@@ -43,7 +43,7 @@ def check_otp_token(final_response, conn, cursor, user_id, otp_token, request_id
 
     return final_response
 
-@with_db_connection
+@DatabaseUtils.with_db_connection
 def check_if_user_exists(final_response, conn, cursor, user_id, request_id):
     try:
         query = """

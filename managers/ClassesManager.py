@@ -1,9 +1,9 @@
 from configs.ServerConfig import logger
-from utils.DatabaseUtils import with_db_connection
+from utils import DatabaseUtils
 
 from configs import ClassesConfig
 
-@with_db_connection
+@DatabaseUtils.with_db_connection
 def check_if_duplicated(final_response, conn, cursor, professor_id, location_id, discipline_id, scheduled_at, request_id):
     try:
         query = """
@@ -26,7 +26,7 @@ def check_if_duplicated(final_response, conn, cursor, professor_id, location_id,
 
     return final_response
 
-@with_db_connection
+@DatabaseUtils.with_db_connection
 def create_class(final_response, conn, cursor, professor_id, location_id, discipline_id, scheduled_at, max_participants,
                  qr, request_id):
     try:
@@ -44,7 +44,7 @@ def create_class(final_response, conn, cursor, professor_id, location_id, discip
 
     return final_response
 
-@with_db_connection
+@DatabaseUtils.with_db_connection
 def does_class_exist(final_response, conn, cursor, class_id, request_id):
     try:
         query = """
@@ -63,7 +63,7 @@ def does_class_exist(final_response, conn, cursor, class_id, request_id):
 
     return final_response
 
-@with_db_connection
+@DatabaseUtils.with_db_connection
 def finish_class(final_response, conn, cursor, class_id, request_id):
     try:
         query = """
@@ -84,7 +84,7 @@ def finish_class(final_response, conn, cursor, class_id, request_id):
 
     return final_response
 
-@with_db_connection
+@DatabaseUtils.with_db_connection
 def update_class(final_response, conn, cursor, update_columns, update_values, request_id):
     try:
         query = f"""
@@ -103,7 +103,7 @@ def update_class(final_response, conn, cursor, update_columns, update_values, re
 
     return final_response
 
-@with_db_connection
+@DatabaseUtils.with_db_connection
 def get_class_information(final_response, conn, cursor, class_id, request_id):
     try:
         query = """
@@ -157,7 +157,7 @@ def get_class_information(final_response, conn, cursor, class_id, request_id):
 
     return final_response
 
-@with_db_connection
+@DatabaseUtils.with_db_connection
 def get_all_classes(final_response, conn, cursor, request_id):
     # Created by Luciana
     try:
@@ -211,7 +211,7 @@ def get_all_classes(final_response, conn, cursor, request_id):
 
     return final_response
 
-@with_db_connection
+@DatabaseUtils.with_db_connection
 def get_class_participants(final_response, conn, cursor, class_id, request_id):
     try:
         query = """
@@ -236,7 +236,7 @@ def get_class_participants(final_response, conn, cursor, class_id, request_id):
 
     return final_response
 
-@with_db_connection
+@DatabaseUtils.with_db_connection
 def add_class_participant(final_response, conn, cursor, class_id, user_id, request_id):
     try:
         query = """
@@ -253,7 +253,7 @@ def add_class_participant(final_response, conn, cursor, class_id, user_id, reque
 
     return final_response
 
-@with_db_connection
+@DatabaseUtils.with_db_connection
 def get_user_upcoming_classes(final_response, conn, cursor, user_id, request_id):
     try:
         query = """
@@ -284,7 +284,7 @@ def get_user_upcoming_classes(final_response, conn, cursor, user_id, request_id)
 
     return final_response
 
-@with_db_connection
+@DatabaseUtils.with_db_connection
 def update_participants_status(final_response, conn, cursor, class_id, request_id):
     try:
         query = """
@@ -309,7 +309,7 @@ def update_participants_status(final_response, conn, cursor, class_id, request_i
 
     return final_response
 
-@with_db_connection
+@DatabaseUtils.with_db_connection
 def cancel_participant(final_response, conn, cursor, user_id, class_id, request_id):
     try:
         query = """
@@ -335,7 +335,7 @@ def cancel_participant(final_response, conn, cursor, user_id, class_id, request_
 
     return final_response
 
-@with_db_connection
+@DatabaseUtils.with_db_connection
 def confirm_participant(final_response, conn, cursor, user_id, class_id, request_id):
     try:
         query = """
@@ -361,7 +361,7 @@ def confirm_participant(final_response, conn, cursor, user_id, class_id, request
 
     return final_response
 
-@with_db_connection
+@DatabaseUtils.with_db_connection
 def does_participant_exist(final_response, conn, cursor, class_id, user_id, request_id):
     try:
         query = """

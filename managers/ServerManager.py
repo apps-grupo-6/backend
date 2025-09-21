@@ -1,7 +1,7 @@
 from configs.ServerConfig import logger
-from utils.DatabaseUtils import with_db_connection
+from utils import DatabaseUtils
 
-@with_db_connection
+@DatabaseUtils.with_db_connection
 def create_request_log(final_response, conn, cursor, user_id, method, endpoint, code, execution_time, request_id):
     try:
         query = """
@@ -18,7 +18,7 @@ def create_request_log(final_response, conn, cursor, user_id, method, endpoint, 
 
     return final_response
 
-@with_db_connection
+@DatabaseUtils.with_db_connection
 def get_users(final_response, conn, cursor):
     try:
         query = """
@@ -67,7 +67,7 @@ def get_users(final_response, conn, cursor):
 
     return final_response
 
-@with_db_connection
+@DatabaseUtils.with_db_connection
 def set_user_as_suspect(final_response, conn, cursor, user_id, request_id):
     try:
         query = """
@@ -87,7 +87,7 @@ def set_user_as_suspect(final_response, conn, cursor, user_id, request_id):
 
     return final_response
 
-@with_db_connection
+@DatabaseUtils.with_db_connection
 def set_user_as_banned(final_response, conn, cursor, user_id, request_id):
     try:
         query = """

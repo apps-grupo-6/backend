@@ -1,7 +1,7 @@
 from configs.ServerConfig import logger
-from utils.DatabaseUtils import with_db_connection
+from utils import DatabaseUtils
 
-@with_db_connection
+@DatabaseUtils.with_db_connection
 def does_location_exist(final_response, conn, cursor, location_id, request_id):
     try:
         query = """
@@ -20,7 +20,7 @@ def does_location_exist(final_response, conn, cursor, location_id, request_id):
 
     return final_response
 
-@with_db_connection
+@DatabaseUtils.with_db_connection
 def create_location(final_response, conn, cursor, owner_id, country_code, city, address, request_id):
     try:
         query = """
