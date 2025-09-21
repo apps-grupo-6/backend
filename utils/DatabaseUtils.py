@@ -3,7 +3,6 @@ import psycopg2.extras
 from functools import wraps
 from configs.ServerConfig import connection_pool, logger
 
-
 def with_db_connection(func):
     """
         Manages database connection, executes and return results

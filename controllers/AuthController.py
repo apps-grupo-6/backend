@@ -22,7 +22,7 @@ def login():
         logger.exception(f"{g.request_id} - there are absent mandatory fields")
         g.response_code = "0400"
         return {
-                "detailed_description": e.messages
+            "detailed_description": e.messages
         }
 
     logger.info(f"{g.request_id} - finished mandatory fields check")
