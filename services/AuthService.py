@@ -53,8 +53,8 @@ def login_otp(model, user_id, request_id):
                                                     otp_token=otp_token,
                                                     request_id=request_id,
                                                     errors_code_map={
-                                                              "database_error_code": "0500",
-                                                              "invalid_data_error_code": "0404"
+                                                        "database_error_code": "0500",
+                                                        "invalid_data_error_code": "0404"
                                                     })
     if get_user_token["error"]:
         return {}
