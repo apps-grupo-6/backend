@@ -27,4 +27,4 @@ def create_location():
         }
 
     logger.info(f"{g.request_id} - finished mandatory fields check")
-    return LocationsService.create_location(model=model, request_id=g.request_id)
+    return LocationsService.create_location(model=model, user_id=g.user_id, request_id=g.request_id)

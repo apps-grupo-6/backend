@@ -4,13 +4,12 @@ from flask import g
 from managers import LocationsManager
 from repositories import UsersRepository
 
-def create_location(model, request_id):
-    owner_id = model['owner_id']
+def create_location(model, user_id, request_id):
     country_code = model['country_code']
     city = model['city']
     address = model['address']
 
-    exists_user = UsersRepository.check_if_user_exists(user_id=owner_id,
+    exists_user = UsersRepository.check_if_user_exists(user_id=user_id,
                                                        request_id=request_id,
                                                        errors_code_map={
                                                            "database_error_code": "0500",
@@ -21,7 +20,7 @@ def create_location(model, request_id):
         return {}
 
     logger.info(f"{request_id} - creating new location...")
-    created = LocationsManager.create_location(owner_id=owner_id,
+    created = LocationsManager.create_location(owner_id=user_id,
                                                country_code=country_code,
                                                city=city,
                                                address=address,
