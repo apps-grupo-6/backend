@@ -59,7 +59,6 @@ def set_new_password(user_id, new_password, request_id):
     logger.debug(f"{request_id} - user password updated successfully")
     return True
 
-
 @ServerUtils.set_final_response
 def update_user_last_login(user_id, request_id, errors_code_map):
     logger.info(f"{request_id} - updating user_id '{user_id}' last login...")

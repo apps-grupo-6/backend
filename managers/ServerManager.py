@@ -34,7 +34,8 @@ def get_users(final_response, conn, cursor):
                             'first_name', ui.first_name,
                             'last_name', ui.last_name,
                             'contact_email', ui.contact_email,
-                            'telephone', ui.telephone
+                            'telephone', ui.telephone,
+                            'username', u.username
                         ),
                         'permissions', COALESCE(
                             jsonb_object_agg(rp.method || '-' || rp.endpoint, rp.id

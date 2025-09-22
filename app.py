@@ -7,7 +7,6 @@ from configs.ServerConfig import run_check, logger, special_errors_code_map
 from controllers import AuthController, UsersController, OtpController, ClassesController, LocationsController
 from connectors import ServerConnector
 from repositories import ServerRepository
-from templates import ServerTemplates
 from utils import ServerUtils
 
 app = Flask(__name__)
@@ -25,6 +24,7 @@ CONTROLLERS_BP = {
 def before_request():
     g.request_id = datetime.now().strftime("%Y%m%d%H%M%S%f")
     g.send_email_data = {}
+    g.alert_subject = ""
     g.alert_description = ""
     g.response_code = ""
     g.description_code_map = {}
@@ -48,36 +48,15 @@ def after_request(response):
         ServerConnector.send_email(email=g.send_email_data, request_id=g.request_id)
 
     if g.alert_description:
-        send_email_alert = {}
-        if g.response_code == "9999": #if there was a security breach
-            send_email_alert["subject"] = "ALERTA DE SEGURIDAD"
-
+        if g.response_code == "9999" and g.user_data:#if there was a security breach amd user data was retrieved from cache or exists in our database at least
             if g.user_data["suspect"]:
                 ServerRepository.set_user_as_banned(user_id=g.user_id, request_id=g.request_id)
+                ServerUtils.send_email_account_blocked(g.user_data)
             else:
                 ServerRepository.set_user_as_suspect(user_id=g.user_id, request_id=g.request_id)
 
-        send_email_alert["description"] = g.alert_description
-        send_email_alert["endpoint"] = g.endpoint
-        send_email_alert["method"] = g.method
-        send_email_alert["request_id"] = g.request_id
-        send_email_alert["response_code"] = g.response_code
-        send_email_alert["html_content"] = ServerTemplates.render_alert_email(method=g.method,
-                                                                              request_id=g.request_id,
-                                                                              response_code=g.response_code,
-                                                                              endpoint=g.endpoint,
-                                                                              subject=send_email_alert["subject"],
-                                                                              description=send_email_alert["description"])
-
-        logger.debug(f"{g.request_id} - sending email: {send_email_alert}")
-        logger.info(f"{g.request_id} - notifying all backend developers...")
-        for developer in ServerUtils.BACKEND_DEVELOPERS:
-            backend_developer = ServerUtils.BACKEND_DEVELOPERS[developer]
-            send_email_alert["user_email"] = backend_developer["user_email"]
-            send_email_alert["user_firstname"] = backend_developer["user_firstname"]
-            send_email_alert["user_lastname"] = backend_developer["user_lastname"]
-
-            ServerConnector.send_email(email=send_email_alert, request_id=g.request_id)
+        ServerUtils.get_users() # forces to reload users cache to update user status if banned o flagged as suspect
+        ServerUtils.send_email_alert_backend() # notifies backend developers to check this alert
 
     if response.content_type == 'application/json':
         original_data = response.get_json()

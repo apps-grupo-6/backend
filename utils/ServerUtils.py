@@ -1,7 +1,10 @@
 from flask import g
 from functools import wraps
 
+from configs.ServerConfig import logger
+from connectors import ServerConnector
 from repositories import ServerRepository
+from templates import ServerTemplates, UserTemplate
 
 USERS_DATA = {}
 BACKEND_DEVELOPERS = {}
@@ -67,3 +70,53 @@ def get_users():
             }
 
     BACKEND_DEVELOPERS = temp
+
+def send_email_alert_backend():
+    endpoint = g.endpoint
+    method = g.method
+    request_id = g.request_id
+    response_code = g.response_code
+    description = g.alert_description
+
+    email = {
+        "subject": "ALERTA DE SEGURIDAD",
+        "endpoint": endpoint,
+        "method": method,
+        "request_id": request_id,
+        "response_code": response_code,
+        "html_content": ServerTemplates.render_alert_email(description=description,
+                                                           endpoint=endpoint,
+                                                           method=method,
+                                                           request_id=request_id,
+                                                           response_code=response_code)
+    }
+
+    logger.debug(f"{g.request_id} - sending email: {email}")
+    logger.info(f"{g.request_id} - notifying all backend developers...")
+    for developer in BACKEND_DEVELOPERS:
+        backend_developer = BACKEND_DEVELOPERS[developer]
+        email["user_email"] = backend_developer["user_email"]
+        email["user_firstname"] = backend_developer["user_firstname"]
+        email["user_lastname"] = backend_developer["user_lastname"]
+
+        ServerConnector.send_email(email=email, request_id=g.request_id)
+
+def send_email_account_blocked(user_data):
+    user_information = user_data["information"]
+    username = user_information["username"]
+    contact_email = user_information["contact_email"]
+    firstname  = user_information["first_name"]
+    lastname = user_information["last_name"]
+
+    email = {
+        "subject": "Tu cuenta ha sido bloqueada en Excuses 404",
+        "user_email": contact_email,
+        "user_firstname": firstname,
+        "user_lastname": lastname,
+        "html_content": UserTemplate.render_banned_account_email(first_name=firstname,
+                                                                 last_name=lastname,
+                                                                 username=username)
+    }
+
+    logger.debug(f"{g.request_id} - sending email: {email}")
+    ServerConnector.send_email(email=email, request_id=g.request_id)

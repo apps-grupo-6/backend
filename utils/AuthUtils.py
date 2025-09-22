@@ -42,7 +42,7 @@ def validate_session(func):
                     g.response_code = '9999'
                     return {"code": "0501", "description": "the request could not be processed"}, 500
 
-                data = exists["data"]["data"] if "data" in exists else exists["data"]
+                data = exists["data"]
             else:
                 data = ServerUtils.USERS_DATA["data"]
 
@@ -57,7 +57,7 @@ def validate_session(func):
                 return {"code": "0403", "description": "the request could not be processed due to user_id is banned"}, 403
 
             if user_data["suspect"]: #if user was flagged as suspect
-                logger.warning(f"{g.request_id} - user_id '{user_id}' is flagged as suspect")
+                logger.warning(f"{g.request_id} - user_id '{user_id}' was flagged as suspect")
 
             if user_id not in ServerUtils.BACKEND_DEVELOPERS:
                 user_permissions = user_data["permissions"]

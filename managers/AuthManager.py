@@ -60,7 +60,8 @@ def check_if_user_exists(final_response, conn, cursor, user_id, request_id):
                             'first_name', ui.first_name,
                             'last_name', ui.last_name,
                             'contact_email', ui.contact_email,
-                            'telephone', ui.telephone
+                            'telephone', ui.telephone,
+                            'username', u.username
                         ),
                         'permissions', COALESCE(
                             jsonb_object_agg(rp.method || '-' || rp.endpoint, rp.id
@@ -89,7 +90,8 @@ def check_if_user_exists(final_response, conn, cursor, user_id, request_id):
         values = (user_id,)
 
         cursor.execute(query, values)
-        final_response["data"] = cursor.fetchone()
+        final_response["data"] = cursor.fetchone()["data"]
+        logger.info(final_response["data"])
     except:
         logger.exception(f"{request_id} - an error occurred while checking if user exists")
         final_response["ok"] = False

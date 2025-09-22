@@ -1,10 +1,10 @@
-def render_alert_email(subject, description, endpoint, method, request_id, response_code):
+def render_alert_email(description, endpoint, method, request_id, response_code):
     return f"""
     <!DOCTYPE html>
     <html lang="es">
     <head>
         <meta charset="UTF-8">
-        <title>Excuses 404 - {subject}</title>
+        <title>Excuses 404 - ALERTA DE SEGURIDAD</title>
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
         <style>
             body {{ font-family: 'Segoe UI', sans-serif; background-color: #f4f4f4; margin: 0; padding: 0; color: #333; }}
@@ -21,7 +21,7 @@ def render_alert_email(subject, description, endpoint, method, request_id, respo
     <body>
         <div class="container">
             <div class="header">
-                <h1>{subject}</h1>
+                <h1>ALERTA DE SEGURIDAD</h1>
             </div>
             <div class="body">
                 <p>Se detectó una posible violación de seguridad en el sistema:</p>
