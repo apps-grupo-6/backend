@@ -73,7 +73,7 @@ def validate_session(func):
                 if check_endpoint not in user_permissions:
                     logger.error(f"{g.request_id} - user_id '{user_id}' cannot use endpoint: '{check_endpoint}'")
                     g.response_code = "9999"
-                    g.alert_description = f"user_id '{user_id}' tried to use a endpoint but its role does not allows it."
+                    g.alert_description = f"user_id '{user_id}' tried to use an endpoint '{check_endpoint}' but its role does not allow it."
                     return {"code": "0403", "description": "you are not allowed to use this function"}, 403
                 else:
                     logger.debug(f"{g.request_id} - user_id '{user_id}' can use this endpoint")
