@@ -49,7 +49,7 @@ def login_otp():
     return AuthService.login_otp(model=model, user_id=g.user_id, request_id=g.request_id)
 
 @bp.post("/refresh")
-@ServerUtils.configure_request(description_code_map=AuthConfig.refresh_token_code_map, method="POST")
+@ServerUtils.configure_request(description_code_map=AuthConfig.refresh_token_code_map, method="POST", endpoint="refresh")
 def refresh_token():
     try:
         logger.info(f"{g.request_id} - starting refresh_token")
@@ -68,7 +68,7 @@ def refresh_token():
     return AuthService.refresh_token(model=model, request_id=g.request_id)
 
 @bp.post("/recover")
-@ServerUtils.configure_request(description_code_map=AuthConfig.recover_account_code_map, method="POST")
+@ServerUtils.configure_request(description_code_map=AuthConfig.recover_account_code_map, method="POST", endpoint="recover")
 def recover_account():
     try:
         logger.info(f"{g.request_id} - starting recover_account")

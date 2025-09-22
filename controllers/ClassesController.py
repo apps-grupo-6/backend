@@ -44,6 +44,15 @@ def get_user_upcoming_classes():
     logger.info(f"{g.request_id} - starting get_user_upcoming_classes")
     return ClassesService.get_user_upcoming_classes(user_id=g.user_id, request_id=g.request_id)
 
+@bp.get("/history")
+@bp.get("/history/<string:since>")
+@bp.get("/history/<string:since>/<string:until>")
+@ServerUtils.configure_request(description_code_map=ClassesConfig.get_user_classes_history_code_map, method="GET", endpoint="history")
+@AuthUtils.validate_session
+def get_user_classes_history(since=None, until=None):
+    logger.info(f"{g.request_id} - starting get_user_classes_history")
+    return ClassesService.get_user_classes_history(user_id=g.user_id, since=since, until=until, request_id=g.request_id)
+
 @bp.get("/<int:id>")
 @ServerUtils.configure_request(description_code_map=ClassesConfig.get_class_code_map, method="GET", endpoint="<id>")
 @AuthUtils.validate_session

@@ -218,7 +218,7 @@ def check_if_participant_exists(class_id, user_id, request_id, errors_code_map):
 
 @ServerUtils.set_final_response
 def check_if_user_doesnt_participant(class_id, user_id, request_id, errors_code_map):
-    logger.info(f"{request_id} - checking if '{user_id}' participates in class_id '{class_id}'...")
+    logger.info(f"{request_id} - checking if user_id '{user_id}' participates in class_id '{class_id}'...")
     exists_participant = ClassesManager.does_participant_exist(class_id=class_id,
                                                                user_id=user_id,
                                                                request_id=request_id)
@@ -233,3 +233,18 @@ def check_if_user_doesnt_participant(class_id, user_id, request_id, errors_code_
 
     logger.debug(f"{request_id} - user_id is not a participant in this class")
     return {"flag": 1}
+
+@ServerUtils.set_final_response
+def get_user_classes_history(user_id, columns, values, request_id, errors_code_map):
+    logger.info(f"{request_id} - retrieving all classes where user_id '{user_id}' has interacted...")
+    user_history = ClassesManager.get_user_classes_history(user_id=user_id,
+                                                                 columns=columns,
+                                                                 column_values=values,
+                                                                 request_id=request_id)
+
+    if not user_history["ok"]:
+        logger.critical(f"{request_id} - an error occurred while retrieving")
+        return {"flag": -1}
+
+    logger.debug(f"{request_id} - found {len(user_history['data'])} classes")
+    return {"flag": 1, "data": user_history['data']}
