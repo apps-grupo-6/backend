@@ -24,7 +24,6 @@ CONTROLLERS_BP = {
 def before_request():
     g.request_id = datetime.now().strftime("%Y%m%d%H%M%S%f")
     g.send_email_data = {}
-    g.alert_subject = ""
     g.alert_description = ""
     g.response_code = ""
     g.description_code_map = {}
