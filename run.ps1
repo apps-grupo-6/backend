@@ -1,11 +1,21 @@
-Write-Host "==> Limpiando contenedores detenidos..." -ForegroundColor Cyan
-docker container prune -f
+echo "==> Deteniendo y eliminando todos los contenedores..."
+docker stop $(docker ps -aq) 2>/dev/null
+docker rm -f $(docker ps -aq) 2>/dev/null
 
-Write-Host "==> Construyendo imágenes con Docker Compose..." -ForegroundColor Cyan
-docker-compose build
+echo "==> Eliminando imágenes sin usar..."
+docker rmi -f $(docker images -aq) 2>/dev/null
 
-Write-Host "==> Levantando contenedores en segundo plano..." -ForegroundColor Cyan
+echo "==> Eliminando volúmenes sin usar..."
+docker volume prune -f
+
+echo "==> Eliminando redes sin usar..."
+docker network prune -f
+
+echo "==> Construyendo imágenes con Docker Compose (sin caché)..."
+docker-compose build --no-cache
+
+echo "==> Levantando contenedores en segundo plano..."
 docker-compose up -d
 
-Write-Host "==> Logs en vivo del backend..." -ForegroundColor Yellow
-docker-compose logs -f
+echo "==> Logs en vivo del backend..."
+docker-compose logs -f backend

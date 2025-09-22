@@ -1,4 +1,5 @@
 .idea
 .venv
+.crt
 properties/*
 *.pyc
