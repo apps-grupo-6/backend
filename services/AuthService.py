@@ -1,13 +1,11 @@
 import datetime, jwt
-from random import shuffle
 
 from flask import g
 from configs.ServerConfig import logger
 
 from utils import UsersUtils, AuthUtils, OtpUtils
 from configs import AuthConfig
-from repositories import AuthRepository, OtpRepository, UsersRepository
-
+from repositories import AuthRepository, UsersRepository
 
 def login(model, request_id):
     username = model["username"]
