@@ -2,7 +2,8 @@ from configs.ServerConfig import logger
 from flask import g
 
 from managers import LocationsManager
-from repositories import UsersRepository
+from repositories import UsersRepository, LocationsRepository
+
 
 def create_location(model, user_id, request_id):
     country_code = model['country_code']
@@ -19,18 +20,15 @@ def create_location(model, user_id, request_id):
     if exists_user["error"]:
         return {}
 
-    logger.info(f"{request_id} - creating new location...")
-    created = LocationsManager.create_location(owner_id=user_id,
-                                               country_code=country_code,
-                                               city=city,
-                                               address=address,
-                                               request_id=request_id)
+    created = LocationsRepository.create_location(owner_id=user_id,
+                                                  country_code=country_code,
+                                                  city=city,
+                                                  address=address,
+                                                  request_id=request_id,
+                                                  errors_code_map={"database_error_code": "0501"})
 
-    if not created["ok"]:
-        logger.critical(f"{request_id} - an error occurred while creating location")
-        g.response_code = "0501"
+    if created["error"]:
         return {}
 
-    logger.info(f"{request_id} - location created successfully")
     g.response_code = "0200"
     return {}
