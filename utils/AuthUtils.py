@@ -21,7 +21,7 @@ def validate_session(func):
         try:
             token = auth_header.split(" ")[1]
             decoded = jwt.decode(token, AuthConfig.jwt_secret, algorithms=[AuthConfig.jwt_algorithm])
-            user_id = decoded["user_id"]
+            user_id = decoded["user_id"] if "data" not in decoded else decoded["data"]["user_id"]
             logger.debug(f"{g.request_id} - jwt token is valid")
 
             logger.info(f"{g.request_id} - endpoint requested by user_id: '{user_id}'")
