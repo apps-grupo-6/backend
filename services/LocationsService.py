@@ -1,7 +1,5 @@
-from configs.ServerConfig import logger
 from flask import g
 
-from managers import LocationsManager
 from repositories import UsersRepository, LocationsRepository
 
 
@@ -9,6 +7,7 @@ def create_location(model, user_id, request_id):
     country_code = model['country_code']
     city = model['city']
     address = model['address']
+    name = model['name']
 
     exists_user = UsersRepository.check_if_user_exists(user_id=user_id,
                                                        request_id=request_id,
@@ -24,6 +23,7 @@ def create_location(model, user_id, request_id):
                                                   country_code=country_code,
                                                   city=city,
                                                   address=address,
+                                                  name=name,
                                                   request_id=request_id,
                                                   errors_code_map={"database_error_code": "0501"})
 

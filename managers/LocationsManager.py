@@ -21,13 +21,13 @@ def does_location_exist(final_response, conn, cursor, location_id, request_id):
     return final_response
 
 @DatabaseUtils.with_db_connection
-def create_location(final_response, conn, cursor, owner_id, country_code, city, address, request_id):
+def create_location(final_response, conn, cursor, owner_id, country_code, city, address, name, request_id):
     try:
         query = """
-            INSERT INTO locations (owner_id, country_code, city, address, created_at)
-            VALUES (%s, %s, %s, %s, NOW())
+            INSERT INTO locations (owner_id, country_code, city, address, name, created_at)
+            VALUES (%s, %s, %s, %s, %s, NOW())
         """
-        values = (owner_id, country_code, city, address)
+        values = (owner_id, country_code, city, address, name)
 
         cursor.execute(query, values)
         conn.commit()
