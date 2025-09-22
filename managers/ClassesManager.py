@@ -203,6 +203,7 @@ def get_all_classes(final_response, conn, cursor, request_id):
                 c.ended_at, c.qr, c.created_at
             ORDER BY c.scheduled_at DESC
         """
+
         cursor.execute(query)
         final_response["data"] = cursor.fetchall()
     except:
