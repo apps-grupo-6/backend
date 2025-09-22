@@ -39,7 +39,7 @@ def check_otp_token(user_id, otp_token, type, request_id, errors_code_map):
 
 # it's okay that this function does not use set_final_response decorator
 def check_if_user_exists(user_id, request_id):
-    logger.info(f"{request_id} - checking if user_id '{user_id}' exists...")
+    logger.info(f"{request_id} - checking if user_id '{user_id}' exists our database...")
     get_user_token = AuthManager.check_if_user_exists(user_id=user_id,
                                                       request_id=request_id)
 

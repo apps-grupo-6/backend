@@ -26,7 +26,7 @@ def validate_session(func):
 
             logger.info(f"{g.request_id} - endpoint requested by user_id: '{user_id}'")
 
-            logger.info(f"{g.request_id} - checking if user exists...")
+            logger.info(f"{g.request_id} - checking if user is cached...")
             str_user_id = str(user_id)
             if not str_user_id in ServerUtils.USERS_DATA["data"]: # maybe user registered between retrieving users cron execution
                 exists = AuthRepository.check_if_user_exists(user_id=user_id, request_id=g.request_id)
@@ -42,10 +42,11 @@ def validate_session(func):
                     g.response_code = '9999'
                     return {"code": "0501", "description": "the request could not be processed"}, 500
 
-                user_data = exists["data"]
+                data = exists["data"]["data"] if "data" in exists else exists["data"]
             else:
-                user_data = ServerUtils.USERS_DATA["data"][str_user_id]
+                data = ServerUtils.USERS_DATA["data"]
 
+            user_data = data[str_user_id]
             logger.debug(f"{g.request_id} - user_id exists")
             g.user_id = user_id
             g.user_data = user_data
@@ -74,6 +75,8 @@ def validate_session(func):
                     g.response_code = "9999"
                     g.alert_description = f"user_id '{user_id}' tried to use a endpoint but its role does not allows it."
                     return {"code": "0403", "description": "you are not allowed to use this function"}, 403
+                else:
+                    logger.debug(f"{g.request_id} - user_id '{user_id}' can use this endpoint")
             else:
                 logger.debug(f"this request was done by a backend developer with the user_id '{user_id}'")
 

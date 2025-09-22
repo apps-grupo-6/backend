@@ -63,10 +63,9 @@ def check_if_user_exists(final_response, conn, cursor, user_id, request_id):
                             'telephone', ui.telephone
                         ),
                         'permissions', COALESCE(
-                            jsonb_agg(
-                                jsonb_build_object(up.method || '-' || up.endpoint, up.id)
-                            ) FILTER (WHERE up.id IS NOT NULL),
-                            '[]'::jsonb
+                            jsonb_object_agg(rp.method || '-' || rp.endpoint, rp.id
+                            ) FILTER (WHERE rp.id IS NOT NULL),
+                            '{}'::jsonb
                         ),
                         'roles', COALESCE(
                             jsonb_agg(DISTINCT r.name)
@@ -77,9 +76,10 @@ def check_if_user_exists(final_response, conn, cursor, user_id, request_id):
                 FROM users u
                 JOIN user_information ui ON ui.user_id = u.id
                 JOIN user_controls uc ON uc.user_id = u.id
-                LEFT JOIN user_permissions up ON up.user_id = u.id
                 LEFT JOIN user_roles ur ON ur.user_id = u.id
                 LEFT JOIN roles r ON r.id = ur.role_id
+                LEFT JOIN role_permissions rp ON rp.role_id = r.id
+                WHERE u.id = %s
                 GROUP BY
                     u.id,
                     uc.is_banned, uc.is_suspicious, uc.force_disconnect,
@@ -88,7 +88,6 @@ def check_if_user_exists(final_response, conn, cursor, user_id, request_id):
         """
         values = (user_id,)
 
-        logger.info(query%values)
         cursor.execute(query, values)
         final_response["data"] = cursor.fetchone()
     except:
