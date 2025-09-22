@@ -46,3 +46,20 @@ def update_class_fields_formatter(model, request_id):
         "columns": columns,
         "values": values
     }
+
+def get_user_classes_formatter(model, request_id):
+    columns = []
+    values = []
+    error = False
+
+    for key in model:
+        if model[key]:
+            comparing = ">=" if key == "since" else "<="
+            columns.append(f"c.scheduled_at {comparing} %s")
+            values.append(f"'{model[key]} 00:00:00'")
+
+    return {
+        "error": error,
+        "columns": columns,
+        "values": values
+    }

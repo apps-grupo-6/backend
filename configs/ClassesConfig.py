@@ -112,3 +112,9 @@ confirm_participant_code_map = {
     "0501": ("the request could not be processed", 500),
     "0502": ("the request could not be processed", 500)
 }
+
+get_user_classes_history_code_map = {
+    "0200": ("ok", 200),
+    "0400": ("bad request", 400),
+    "0500": ("the request could not be processed", 500)
+}

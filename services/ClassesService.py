@@ -350,3 +350,40 @@ def confirm_participant(class_id, user_id, request_id):
 
     g.response_code = "0200"
     return {}
+
+def get_user_classes_history(user_id, since, until, request_id):
+    if since and until:
+        since_date = datetime.datetime.strptime(since, "%Y-%m-%d")
+        until_date = datetime.datetime.strptime(until, "%Y-%m-%d")
+
+        if since_date > until_date:
+            logger.error(f"{request_id} - 'since' ({since}) cannot be later than 'until' ({until})")
+            g.response_code = "0400"
+            return {}
+
+    data = {"since": since, "until": until}
+
+    formatted_update = ClassesUtils.get_user_classes_formatter(model=data, request_id=request_id)
+    error = formatted_update["error"]
+    columns = formatted_update["columns"]
+    values = formatted_update["values"]
+
+    if error:
+        return {}
+
+    match_dates = " AND ".join(columns) if len(columns) else ""
+    logger.debug(f"{request_id} - dates to match: {match_dates or None}")
+
+    history = ClassesRepository.get_user_classes_history(user_id=user_id,
+                                                         columns=match_dates,
+                                                         values=values,
+                                                         request_id=request_id,
+                                                         errors_code_map={"database_error_code": "0500"})
+
+    if history["error"]:
+        return {}
+
+    g.response_code = "0200"
+    return {
+        "data": history['data']
+    }

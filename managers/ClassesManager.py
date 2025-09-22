@@ -108,29 +108,29 @@ def get_class_information(final_response, conn, cursor, class_id, request_id):
     try:
         query = """
             SELECT 
-                c.id as class_id,
                 c.professor_id as professor_id,
                 ui.first_name as professor_first_name,
                 ui.last_name as professor_last_name,
-                c.location_id,
-                l.city,
-                l.address,
-                d.name as discipline_name,
-                to_char(c.scheduled_at, 'YYYY-MM-DD"T"HH24:MI:SS.MS') as scheduled_at,
-                c.max_participants,
-                c.status,
-                to_char(c.ended_at, 'YYYY-MM-DD"T"HH24:MI:SS.MS') as ended_at,
-                c.qr,
-                c.created_at,
+                c.location_id as gym_id,
+                l.city as gym_city,
+                l.name as gym_name,
+                l.address as gym_address,
+                d.name as class_discipline_name,
+                to_char(c.scheduled_at, 'YYYY-MM-DD HH24:MI:SS') as class_scheduled_at,
+                c.max_participants as class_max_participants,
+                c.status as class_status,
+                to_char(c.ended_at, 'YYYY-MM-DD HH24:MI:SS') as class_ended_at,
+                c.qr as class_qr,
+                to_char(c.created_at, 'YYYY-MM-DD HH24:MI:SS') as class_created_at,
                 COALESCE(
                     json_agg(
                         json_build_object(
                             'participant_id', cp.id,
-                            'user_id', cp.user_id,
-                            'added_at', cp.added_at,
-                            'status', cp.status,
-                            'confirmed_at', cp.confirmed_at,
-                            'updated_at', cp.updated_at
+                            'participant_user_id', cp.user_id,
+                            'participant_added_at', cp.added_at,
+                            'participant_status', cp.status,
+                            'participant_confirmed_at', cp.confirmed_at,
+                            'participant_updated_at', cp.updated_at
                         )
                     ) FILTER (WHERE cp.id IS NOT NULL),  '[]'
                 ) AS participants
@@ -142,7 +142,7 @@ def get_class_information(final_response, conn, cursor, class_id, request_id):
             WHERE c.id = %s
             GROUP BY 
                 c.id, ui.first_name, ui.last_name,
-                c.location_id, l.city, l.address, d.name,
+                c.location_id, l.city, l.address, l.name, d.name,
                 c.scheduled_at, c.max_participants, c.status,
                 c.ended_at, c.qr, c.created_at
             LIMIT 1;
@@ -167,25 +167,26 @@ def get_all_classes(final_response, conn, cursor, request_id):
                 c.professor_id as professor_id,
                 ui.first_name as professor_first_name,
                 ui.last_name as professor_last_name,
-                c.location_id,
-                l.city,
-                l.address,
-                d.name as discipline_name,
-                to_char(c.scheduled_at, 'YYYY-MM-DD"T"HH24:MI:SS.MS') as scheduled_at,
-                c.max_participants,
-                c.status,
-                to_char(c.ended_at, 'YYYY-MM-DD"T"HH24:MI:SS.MS') as ended_at,
-                c.qr,
-                c.created_at,
+                c.location_id as gym_id,
+                l.city as gym_city,
+                l.name as gym_name,
+                l.address as gym_address,
+                d.name as class_discipline_name,
+                to_char(c.scheduled_at, 'YYYY-MM-DD HH24:MI:SS') as class_scheduled_at,
+                c.max_participants as class_max_participants,
+                c.status as class_status,
+                to_char(c.ended_at, 'YYYY-MM-DD HH24:MI:SS') as class_ended_at,
+                c.qr as class_qr,
+                to_char(c.created_at, 'YYYY-MM-DD HH24:MI:SS') as class_created_at,
                 COALESCE(
                     json_agg(
                         json_build_object(
                             'participant_id', cp.id,
-                            'user_id', cp.user_id,
-                            'added_at', cp.added_at,
-                            'status', cp.status,
-                            'confirmed_at', cp.confirmed_at,
-                            'updated_at', cp.updated_at
+                            'participant_user_id', cp.user_id,
+                            'participant_added_at', cp.added_at,
+                            'participant_status', cp.status,
+                            'participant_confirmed_at', cp.confirmed_at,
+                            'participant_updated_at', cp.updated_at
                         )
                     ) FILTER (WHERE cp.id IS NOT NULL),  '[]'
                 ) AS participants
@@ -196,11 +197,10 @@ def get_all_classes(final_response, conn, cursor, request_id):
             LEFT JOIN class_participants cp on c.id = cp.class_id
             GROUP BY 
                 c.id, ui.first_name, ui.last_name,
-                c.location_id, l.city, l.address, d.name,
+                c.location_id, l.city, l.address, l.name, d.name,
                 c.scheduled_at, c.max_participants, c.status,
                 c.ended_at, c.qr, c.created_at
             ORDER BY c.scheduled_at DESC
-            LIMIT 1;
         """
 
         cursor.execute(query)
@@ -215,12 +215,12 @@ def get_all_classes(final_response, conn, cursor, request_id):
 def get_class_participants(final_response, conn, cursor, class_id, request_id):
     try:
         query = """
-            SELECT id, 
-                   user_id, 
-                   status, 
-                   confirmed_at, 
-                   added_at, 
-                   updated_at
+            SELECT id as participant_id, 
+                   user_id as participant_user_id, 
+                   status as participant_status, 
+                   confirmed_at as participant_confirmed_at, 
+                   added_at as participant_added_at, 
+                   updated_at as participant_updated_at
             FROM class_participants cp
             WHERE 
                 class_id = %s
@@ -261,11 +261,11 @@ def get_user_upcoming_classes(final_response, conn, cursor, user_id, request_id)
                 c.id AS class_id,
                 ui.first_name AS professor_first_name,
                 ui.last_name AS professor_last_name,
-                c.scheduled_at AS class_scheduled_at,
+                to_char(c.scheduled_at, 'YYYY-MM-DD HH24:MI:SS') as class_scheduled_at,
                 cp.status AS participant_status,
-                cp.confirmed_at AS participant_confirmed_at,
-                cp.added_at AS participant_added_at,
-                cp.updated_at AS participant_updated_at
+                to_char(cp.confirmed_at, 'YYYY-MM-DD HH24:MI:SS') as participant_confirmed_at,
+                to_char(cp.added_at, 'YYYY-MM-DD HH24:MI:SS') as participant_added_at,
+                to_char(cp.updated_at, 'YYYY-MM-DD HH24:MI:SS') as participant_updated_at
             FROM class_participants cp
             JOIN classes c ON c.id = cp.class_id
             JOIN user_information ui ON c.professor_id = ui.user_id
@@ -378,6 +378,48 @@ def does_participant_exist(final_response, conn, cursor, class_id, user_id, requ
         final_response["data"] = cursor.fetchone()
     except:
         logger.exception(f"{request_id} - an error occurred while trying to check if user_id participates in this class")
+        final_response["ok"] = False
+
+    return final_response
+
+@DatabaseUtils.with_db_connection
+def get_user_classes_history(final_response, conn, cursor, user_id, columns, column_values, request_id):
+    try:
+        query = """
+            SELECT
+                c.id AS class_id,
+                ui.first_name AS professor_first_name,
+                ui.last_name AS professor_last_name,
+                to_char(c.scheduled_at, 'YYYY-MM-DD HH24:MI:SS') as class_scheduled_at,
+                cp.status AS participant_status,
+                to_char(cp.confirmed_at, 'YYYY-MM-DD HH24:MI:SS') as participant_confirmed_at,
+                to_char(cp.added_at, 'YYYY-MM-DD HH24:MI:SS') as participant_added_at,
+                to_char(cp.updated_at, 'YYYY-MM-DD HH24:MI:SS') as participant_updated_at,
+                l.city AS gym_city,
+                l.address AS gym_address,
+                l.name AS gym_name,
+                CASE
+                    WHEN c.ended_at IS NOT NULL THEN (c.ended_at - c.scheduled_at)::TEXT
+                    ELSE NULL
+                END AS duration
+            FROM class_participants cp
+            JOIN classes c ON c.id = cp.class_id
+            JOIN user_information ui ON c.professor_id = ui.user_id
+            JOIN locations l ON c.location_id = l.id
+            WHERE
+                cp.user_id = %s
+        """
+
+        values = (user_id,)
+
+        if columns:
+            query += f"AND {columns}"
+            values += tuple(column_values)
+
+        cursor.execute(query, values)
+        final_response["data"] = cursor.fetchall()
+    except:
+        logger.exception(f"{request_id} - an error occurred while trying to get user_id all classes history")
         final_response["ok"] = False
 
     return final_response

@@ -63,8 +63,8 @@ def validate_session(func):
                 check_endpoint = f"{g.method}-{g.endpoint}"
 
                 if g.endpoint_id_list:
-                    id = g.endpoint_id_list[0]
-                    check_endpoint = check_endpoint.replace(id, "<id>")
+                    for parameter_id in g.endpoint_id_list:
+                        check_endpoint = check_endpoint.replace(parameter_id, "<id>", 1)
 
                 if check_endpoint[-1] == "/":
                     check_endpoint = check_endpoint[:-1]
