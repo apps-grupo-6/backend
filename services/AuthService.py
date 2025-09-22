@@ -79,6 +79,13 @@ def login_otp(model, user_id, request_id):
     if not deleted:
         return {}
 
+    last_login = UsersRepository.update_user_last_login(user_id=user_id,
+                                                        request_id=request_id,
+                                                        errors_code_map={"database_error_code": "0502"})
+
+    if last_login["error"]:
+        return {}
+
     logger.info(f"{request_id} - second login step finished successfully; user has been authenticated")
     g.response_code = "0200"
     return {}
@@ -104,7 +111,13 @@ def refresh_token(model, request_id):
     decoded["data"]["exp"] += AuthConfig.jwt_exp_delta_seconds
     refreshed = jwt.encode(decoded, AuthConfig.jwt_secret, algorithm=AuthConfig.jwt_algorithm)
 
-    logger.debug(f"{request_id} - jwt token refreshed successfully...")
+    last_login = UsersRepository.update_user_last_login(user_id=decoded["data"]["user_id"],
+                                                        request_id=request_id,
+                                                        errors_code_map={"database_error_code": "0500"})
+
+    if last_login["error"]:
+        return {}
+
     g.response_code = "0200"
     return {
         "data": {

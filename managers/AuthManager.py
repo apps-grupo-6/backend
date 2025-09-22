@@ -114,3 +114,21 @@ def set_new_password(final_response, conn, cursor, new_password, user_id, reques
         final_response["ok"] = False
 
     return final_response
+
+@DatabaseUtils.with_db_connection
+def update_user_last_login(final_response, conn, cursor, user_id, request_id):
+    try:
+        query = f"""
+             UPDATE users
+             SET last_login_at = NOW()
+             WHERE id = %s
+         """
+        values = (user_id,)
+
+        cursor.execute(query, values)
+        conn.commit()
+    except:
+        logger.exception(f"{request_id} - an error occurred while trying to update last login")
+        final_response["ok"] = False
+
+    return final_response
