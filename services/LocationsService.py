@@ -27,7 +27,7 @@ def create_location(model, user_id, request_id):
                                                request_id=request_id)
 
     if not created["ok"]:
-        logger.critical(f"{request_id} - there was an error while creating")
+        logger.critical(f"{request_id} - an error occurred while creating location")
         g.response_code = "0501"
         return {}
 

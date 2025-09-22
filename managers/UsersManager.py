@@ -89,7 +89,7 @@ def update_user(final_response, conn, cursor, update_columns, update_values, req
         cursor.execute(query, values)
         conn.commit()
     except:
-        logger.exception(f"{request_id} - an error occurred while trying to finish this class")
+        logger.exception(f"{request_id} - an error occurred while trying to update user information")
         final_response["ok"] = False
 
     return final_response

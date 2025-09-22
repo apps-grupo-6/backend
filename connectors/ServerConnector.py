@@ -41,4 +41,4 @@ def send_email(email, request_id):
         response = email_api.send_transac_email(email)
         logger.debug(f"{request_id} - email sent to '{user_email}'. ID: '{response.message_id}'")
     except ApiException:
-        logger.exception(f"{request_id} - there was an error while trying to sending email")
+        logger.exception(f"{request_id} - an error occurred while trying to sending email")

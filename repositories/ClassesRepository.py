@@ -106,7 +106,7 @@ def get_all_classes(request_id, errors_code_map):
     classes_result = ClassesManager.get_all_classes(request_id=request_id)
 
     if not classes_result["ok"]:
-        logger.critical(f"{request_id} - there was an error while getting classes")
+        logger.critical(f"{request_id} - an error occurred while getting classes")
         return {"flag": -1}
 
     logger.debug(f"{request_id} - found {len(classes_result['data'])} classes")
@@ -118,7 +118,7 @@ def get_class_participants(class_id, request_id, errors_code_map):
     class_participants = ClassesManager.get_class_participants(class_id=class_id, request_id=request_id)
 
     if not class_participants["ok"]:
-        logger.critical(f"{request_id} - there was an error while getting class participants")
+        logger.critical(f"{request_id} - an error occurred while getting class participants")
         return {"flag": -1}
 
     logger.debug(f"{request_id} - found {len(class_participants['data'])} participants")
@@ -132,7 +132,7 @@ def add_class_participant(class_id, user_id, request_id, errors_code_map):
                                                              request_id=request_id)
 
     if not added_participant["ok"]:
-        logger.critical(f"{request_id} - there was an error while adding participant to class")
+        logger.critical(f"{request_id} - an error occurred while adding participant to class")
         return {"flag": -1}
 
     logger.debug(f"{request_id} - participant added successfully")
@@ -144,7 +144,7 @@ def get_user_upcoming_classes(user_id, request_id, errors_code_map):
     upcoming_classes = ClassesManager.get_user_upcoming_classes(user_id=user_id, request_id=request_id)
 
     if not upcoming_classes["ok"]:
-        logger.critical(f"{request_id} - there was an error while retrieving user upcoming classes")
+        logger.critical(f"{request_id} - an error occurred while retrieving user upcoming classes")
         return {"flag": -1}
 
     logger.debug(f"{request_id} - user upcoming classes retrieved successfully")
@@ -156,7 +156,7 @@ def update_participants_status(class_id, request_id, errors_code_map):
     participant_status = ClassesManager.update_participants_status(class_id=class_id, request_id=request_id)
 
     if not participant_status["ok"]:
-        logger.critical(f"{request_id} - there was an error while updating all participants' status")
+        logger.critical(f"{request_id} - an error occurred while updating all participants' status")
         return {"flag": -1}
 
     logger.debug(f"{request_id} - participants' status was updated successfully")
@@ -170,7 +170,7 @@ def cancel_participant(class_id, user_id, request_id, errors_code_map):
                                                            request_id=request_id)
 
     if not participant_status["ok"]:
-        logger.critical(f"{request_id} - there was an error while cancelling all participants' status")
+        logger.critical(f"{request_id} - an error occurred while cancelling all participants' status")
         return {"flag": -1}
 
     if not participant_status["data"]:
@@ -188,7 +188,7 @@ def confirm_participant(class_id, user_id, request_id, errors_code_map):
                                                                request_id=request_id)
 
     if not participant_confirmed["ok"]:
-        logger.critical(f"{request_id} - there was an error while updating all participants' status")
+        logger.critical(f"{request_id} - an error occurred while updating all participants' status")
         return {"flag": -1}
 
     if not participant_confirmed["data"]:
