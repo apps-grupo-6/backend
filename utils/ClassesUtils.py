@@ -1,3 +1,5 @@
+import datetime
+
 from repositories import ClassesRepository
 from configs import ClassesConfig
 
@@ -63,3 +65,15 @@ def get_user_classes_formatter(model, request_id):
         "columns": columns,
         "values": values
     }
+
+def validate_date(date):
+    print(date)
+    if not ClassesConfig.DATE_REGEX.match(date):
+        print("Date is not valid")
+        return False
+    print("Date is valid")
+
+    try:
+        return datetime.datetime.strptime(date, "%Y-%m-%d")
+    except ValueError:
+        return False

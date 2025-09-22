@@ -352,9 +352,21 @@ def confirm_participant(class_id, user_id, request_id):
     return {}
 
 def get_user_classes_history(user_id, since, until, request_id):
-    if since and until:
-        since_date = datetime.datetime.strptime(since, "%Y-%m-%d")
-        until_date = datetime.datetime.strptime(until, "%Y-%m-%d")
+    if since:
+        since_date = ClassesUtils.validate_date(since)
+
+        if not since_date:
+            logger.error(f"{request_id} - since date '{since}' is invalid")
+            g.response_code = "0400"
+            return {}
+
+    if until:
+        until_date = ClassesUtils.validate_date(until)
+
+        if not until_date:
+            logger.error(f"{request_id} - until date '{until}' is invalid")
+            g.response_code = "0400"
+            return {}
 
         if since_date > until_date:
             logger.error(f"{request_id} - 'since' ({since}) cannot be later than 'until' ({until})")

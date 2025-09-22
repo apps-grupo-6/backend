@@ -1,7 +1,12 @@
+import re
+
 from repositories import LocationsRepository, DisciplinesRepository
 
 BLOCKED_STATUS = ('EXPIRED', 'ABSENT', 'PRESENT', 'CANCELLED')
 BLOCK_CONFIRM_STATUS = BLOCKED_STATUS + ('CONFIRMED',)
+
+# thank you gpt for this regex
+DATE_REGEX = re.compile("^\d{4}-(?:(?:0[13578]|1[02])-(0[1-9]|[12]\d|3[01])|(?:0[469]|11)-(0[1-9]|[12]\d|30)|02-(0[1-9]|1\d|2\d))$")
 
 update_class_fields_to_check = {
     "location_id": {
