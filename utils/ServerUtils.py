@@ -109,7 +109,7 @@ def send_email_account_blocked(user_data):
     lastname = user_information["last_name"]
 
     email = {
-        "subject": "Tu cuenta ha sido bloqueada en Excuses 404",
+        "subject": "Tu cuenta ha sido bloqueada",
         "user_email": contact_email,
         "user_firstname": firstname,
         "user_lastname": lastname,

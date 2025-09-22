@@ -36,7 +36,7 @@ def register_account(model, request_id):
         return {}
 
     g.send_email_data = {
-        "subject": "¡Bienvenido/a a Excuses 404!",
+        "subject": "¡Bienvenido/a!",
         "user_email": contact_email,
         "user_firstname": first_name,
         "user_lastname": last_name,
