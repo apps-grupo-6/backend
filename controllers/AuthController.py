@@ -2,9 +2,9 @@ from flask import Blueprint, g, request
 from marshmallow import ValidationError
 from configs.ServerConfig import logger
 
-from models import AuthModel
+from models import AuthModel, UsersModel
 from configs import AuthConfig
-from services import AuthService
+from services import AuthService, UsersService
 from utils import AuthUtils, ServerUtils
 
 bp = Blueprint('auth', __name__)
@@ -66,3 +66,66 @@ def refresh_token():
 
     logger.info(f"{g.request_id} - finished mandatory fields check")
     return AuthService.refresh_token(model=model, request_id=g.request_id)
+
+@bp.post("/verify")
+@ServerUtils.configure_request(description_code_map=AuthConfig.verify_otp_code_map, method="POST", endpoint="verify")
+def verify_otp():
+    try:
+        logger.info(f"{g.request_id} - starting verify_otp")
+
+        data = request.json
+        username = data.get("username")
+        verification_code = data.get("verification_code")
+        
+        if not username or not verification_code:
+            g.response_code = "0400"
+            return {
+                "detailed_description": {
+                    "username": ["Este campo es requerido."] if not username else [],
+                    "verification_code": ["Este campo es requerido."] if not verification_code else []
+                }
+            }
+    except Exception as e:
+        logger.exception(f"{g.request_id} - error in verification endpoint")
+        g.response_code = "0400"
+        return {
+            "detailed_description": {"error": ["Datos inválidos"]}
+        }
+
+    return UsersService.verify_otp_code(username=username, verification_code=verification_code, request_id=g.request_id)
+
+@bp.post("/resend-otp")
+@ServerUtils.configure_request(description_code_map=AuthConfig.resend_otp_code_map, method="POST", endpoint="resend-otp")
+def resend_otp():
+    try:
+        logger.info(f"{g.request_id} - starting resend_otp")
+
+        data = request.json
+        model = UsersModel.resend_otp().load(data)
+    except ValidationError as e:
+        logger.exception(f"{g.request_id} - there are absent mandatory fields")
+        g.response_code = "0400"
+        return {
+            "detailed_description": e.messages
+        }
+
+    return UsersService.resend_otp(model=model, request_id=g.request_id)
+
+@bp.post("/reset-password")
+@ServerUtils.configure_request(description_code_map=AuthConfig.reset_password_code_map, method="POST", endpoint="reset-password")
+def reset_password():
+    logger.info(f"{g.request_id} - starting reset_password")
+
+    try:
+        schema = UsersModel.reset_password()
+        model = schema.load(request.json)
+    except ValidationError as e:
+        logger.error(f"{g.request_id} - validation error: {e.messages}")
+        g.response_code = "0400"
+        return {"detailed_description": e.messages}
+    except Exception as e:
+        logger.exception(f"{g.request_id} - error parsing request data")
+        g.response_code = "0400"
+        return {"detailed_description": {"error": ["Datos inválidos"]}}
+
+    return UsersService.reset_password_with_token(model=model, request_id=g.request_id)
