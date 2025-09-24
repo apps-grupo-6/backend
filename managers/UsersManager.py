@@ -100,60 +100,7 @@ def update_user(final_response, conn, cursor, update_columns, update_values, req
 
     return final_response
 
-@DatabaseUtils.with_db_connection
-def get_user_by_verification_code(final_response, conn, cursor, username, verification_code, request_id):
-    try:
-        query = """
-            SELECT u.id, u.username, u.verification_expires_at, ui.first_name, ui.last_name, ui.contact_email
-            FROM users u
-            JOIN user_information ui ON ui.user_id = u.id
-            WHERE u.username = %s AND u.verification_token = %s AND u.email_verified = FALSE
-            LIMIT 1
-        """
-        cursor.execute(query, (username, verification_code))
-        final_response["data"] = cursor.fetchone()
-    except Exception as e:
-        logger.exception(f"{request_id} - an error occurred while getting user by verification code: {e}")
-        final_response["ok"] = False
 
-    return final_response
-
-@DatabaseUtils.with_db_connection
-def mark_user_as_verified(final_response, conn, cursor, user_id, request_id):
-    try:
-        query = """
-            UPDATE users 
-            SET email_verified = TRUE, 
-                verification_token = NULL, 
-                verification_expires_at = NULL,
-                updated_at = NOW()
-            WHERE id = %s
-        """
-        cursor.execute(query, (user_id,))
-        conn.commit()
-    except Exception as e:
-        logger.exception(f"{request_id} - an error occurred while marking user as verified: {e}")
-        final_response["ok"] = False
-
-    return final_response
-
-@DatabaseUtils.with_db_connection
-def update_user_verification_token(final_response, conn, cursor, user_id, verification_token, verification_expires_at, request_id):
-    try:
-        query = """
-            UPDATE users 
-            SET verification_token = %s, 
-                verification_expires_at = %s,
-                updated_at = NOW()
-            WHERE id = %s
-        """
-        cursor.execute(query, (verification_token, verification_expires_at, user_id))
-        conn.commit()
-    except Exception as e:
-        logger.exception(f"{request_id} - an error occurred while updating verification token: {e}")
-        final_response["ok"] = False
-
-    return final_response
 
 @DatabaseUtils.with_db_connection
 def get_user_verification_status(final_response, conn, cursor, username, request_id):
@@ -185,6 +132,23 @@ def update_user_password(final_response, conn, cursor, user_id, new_password, re
         conn.commit()
     except Exception as e:
         logger.exception(f"{request_id} - an error occurred while updating user password: {e}")
+        final_response["ok"] = False
+
+    return final_response
+
+@DatabaseUtils.with_db_connection
+def get_username_by_user_id(final_response, conn, cursor, user_id, request_id):
+    try:
+        query = """
+            SELECT username
+            FROM users
+            WHERE id = %s
+            LIMIT 1
+        """
+        cursor.execute(query, (user_id,))
+        final_response["data"] = cursor.fetchone()
+    except Exception as e:
+        logger.exception(f"{request_id} - an error occurred while getting username by user_id: {e}")
         final_response["ok"] = False
 
     return final_response
