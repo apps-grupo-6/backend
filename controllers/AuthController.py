@@ -82,13 +82,13 @@ def verify_otp():
             "detailed_description": e.messages
         }
     except Exception as e:
-        logger.exception(f"{g.request_id} - error parsing request data")
+        logger.exception(f"{g.request_id} - error parsing request data: {str(e)}")
         g.response_code = "0400"
         return {
-            "detailed_description": {"error": ["Datos inválidos"]}
+            "detailed_description": {"error": [f"Error parsing request data: {str(e)}"]}
         }
 
-    return UsersService.verify_otp_code(username=model["username"], verification_code=model["verification_code"], request_id=g.request_id)
+    return AuthService.verify_otp_code(username=model["username"], verification_code=model["verification_code"], request_id=g.request_id)
 
 @bp.post("/resend-otp")
 @ServerUtils.configure_request(description_code_map=AuthConfig.resend_otp_code_map, method="POST", endpoint="resend-otp")
@@ -120,8 +120,27 @@ def reset_password():
         g.response_code = "0400"
         return {"detailed_description": e.messages}
     except Exception as e:
-        logger.exception(f"{g.request_id} - error parsing request data")
+        logger.exception(f"{g.request_id} - error parsing request data: {str(e)}")
         g.response_code = "0400"
-        return {"detailed_description": {"error": ["Datos inválidos"]}}
+        return {"detailed_description": {"error": [f"Error parsing request data: {str(e)}"]}}
 
     return UsersService.reset_password_with_token(model=model, request_id=g.request_id)
+
+@bp.post("/confirmAccount")
+@ServerUtils.configure_request(description_code_map=AuthConfig.confirm_account_code_map, method="POST", endpoint="confirmAccount")
+def confirm_account():
+    logger.info(f"{g.request_id} - starting confirm_account")
+
+    try:
+        schema = AuthModel.verify_otp()
+        model = schema.load(request.json)
+    except ValidationError as e:
+        logger.error(f"{g.request_id} - validation error: {e.messages}")
+        g.response_code = "0400"
+        return {"detailed_description": e.messages}
+    except Exception as e:
+        logger.exception(f"{g.request_id} - error parsing request data: {str(e)}")
+        g.response_code = "0400"
+        return {"detailed_description": {"error": [f"Error parsing request data: {str(e)}"]}}
+
+    return AuthService.confirm_account(username=model["username"], verification_code=model["verification_code"], request_id=g.request_id)
