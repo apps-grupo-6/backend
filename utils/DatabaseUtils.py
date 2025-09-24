@@ -34,9 +34,15 @@ def with_db_connection(func):
 
         except psycopg2.Error as err:
             logger.critical(f"Database error with '{func.__name__}': {err}")
+            final_response["ok"] = False
+            if conn:
+                conn.rollback()
 
         except Exception as e:
             logger.critical(f"Unexpected error with {e}")
+            final_response["ok"] = False
+            if conn:
+                conn.rollback()
 
         finally:
             if cursor:
