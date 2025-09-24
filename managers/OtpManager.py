@@ -62,3 +62,26 @@ def delete_otp(final_response, conn, cursor, user_id, otp_token, type, request_i
         final_response["ok"] = False
 
     return final_response
+
+@DatabaseUtils.with_db_connection
+def check_otp_token_by_username(final_response, conn, cursor, username, otp_token, type, request_id):
+    try:
+        query = """
+            SELECT ot.user_id, ot.expires_at, ot.token
+            FROM otp_tokens ot
+            JOIN users u ON u.id = ot.user_id
+            WHERE 
+                u.username = %s
+                AND ot.token = %s
+                AND ot.type = %s
+            LIMIT 1;
+        """
+        values = (username, otp_token, type)
+
+        cursor.execute(query, values)
+        final_response["data"] = cursor.fetchone()
+    except:
+        logger.exception(f"{request_id} - an error occurred while checking otp_token by username")
+        final_response["ok"] = False
+
+    return final_response
