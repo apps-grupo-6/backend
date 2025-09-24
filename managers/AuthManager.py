@@ -6,10 +6,11 @@ def get_username_info(final_response, conn, cursor, username, request_id):
     try:
         query = """
             SELECT 
-                id as user_id, 
-                password
-            FROM users
-            WHERE username = %s
+                u.id as user_id, 
+                u.password,
+                u.email_verified
+            FROM users u
+            WHERE u.username = %s
             LIMIT 1;
         """
         values = (username,)
