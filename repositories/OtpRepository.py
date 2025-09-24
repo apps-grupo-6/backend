@@ -47,3 +47,22 @@ def delete_otp(user_id, otp_token, type, request_id, errors_code_map):
 
     logger.debug(f"{request_id} - otp token deleted successfully")
     return {"flag": 1}
+
+@ServerUtils.set_final_response
+def check_otp_token_by_username(username, otp_token, type, request_id, errors_code_map):
+    logger.info(f"{request_id} - checking otp token '{otp_token}' for username '{username}' with type '{type}'...")
+    checked = OtpManager.check_otp_token_by_username(username=username,
+                                                     otp_token=otp_token,
+                                                     type=type,
+                                                     request_id=request_id)
+
+    if not checked["ok"]:
+        logger.critical(f"{request_id} - an error occurred while checking otp token")
+        return {"flag": -1}
+
+    if not checked["data"]:
+        logger.error(f"{request_id} - invalid otp token or username")
+        return {"flag": 0}
+
+    logger.debug(f"{request_id} - otp token is valid")
+    return {"flag": 1, "data": checked['data']}
