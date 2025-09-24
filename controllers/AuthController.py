@@ -66,22 +66,3 @@ def refresh_token():
 
     logger.info(f"{g.request_id} - finished mandatory fields check")
     return AuthService.refresh_token(model=model, request_id=g.request_id)
-
-@bp.post("/recover")
-@ServerUtils.configure_request(description_code_map=AuthConfig.recover_account_code_map, method="POST", endpoint="recover")
-def recover_account():
-    try:
-        logger.info(f"{g.request_id} - starting recover_account")
-        logger.info(f"{g.request_id} - starting mandatory fields check")
-
-        data = request.json
-        model = AuthModel.recover_account().load(data)
-    except ValidationError as e:
-        logger.exception(f"{g.request_id} - there are absent mandatory fields")
-        g.response_code = "0400"
-        return {
-            "detailed_description": e.messages
-        }
-
-    logger.info(f"{g.request_id} - finished mandatory fields check")
-    return AuthService.recover_account(model=model, request_id=g.request_id)
