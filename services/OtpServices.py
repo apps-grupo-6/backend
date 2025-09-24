@@ -1,11 +1,10 @@
 from configs.ServerConfig import logger
 from flask import g
-from random import shuffle
 import datetime
 
 from templates import OtpTemplate
-from repositories import OtpRepository
-from utils import UsersUtils
+from repositories import OtpRepository, UsersRepository
+from utils import UsersUtils, OtpUtils
 
 def create_otp(model, user_id, request_id):
     type = model["type"]
@@ -34,18 +33,8 @@ def create_otp(model, user_id, request_id):
         return {}
 
     logger.info(f"{request_id} - creating a new otp_token...")
-    temp = list(request_id[14:20]) # last 6 digits
-    shuffle(temp)
-    otp_token = "".join(temp)
-    logger.info(f"{request_id} - generated OTP: '{otp_token}'")
-
-    otp_token_save = OtpRepository.save_otp(user_id=user_id,
-                                            otp_token=otp_token,
-                                            type=type,
-                                            request_id=request_id,
-                                            errors_code_map={"database_error_code": "0502"})
-
-    if otp_token_save["error"]:
+    otp_token = OtpUtils.generate_and_save_otp(user_id, type, request_id)
+    if not otp_token:
         return {}
 
     g.send_email_data = {
@@ -58,8 +47,30 @@ def create_otp(model, user_id, request_id):
     if type == "LOGIN":
         g.send_email_data["subject"] = "Código de inicio de sesión"
         g.send_email_data["html_content"] = OtpTemplate.render_login_otp_email(otp_code=otp_token)
-    else:
+    elif type == "REGISTRATION":
+        username_data = UsersRepository.get_username_by_user_id(
+            user_id=user_id,
+            request_id=request_id,
+            errors_code_map={"database_error_code": "0500"}
+        )
+        username = username_data["data"]["username"] if not username_data["error"] else "usuario"
+        
+        g.send_email_data["subject"] = "Verifica tu cuenta - Código de activación"
+        g.send_email_data["html_content"] = OtpTemplate.render_registration_verification_email(
+            first_name=user_contact["data"]["first_name"],
+            last_name=user_contact["data"]["last_name"],
+            username=username,
+            otp_code=otp_token
+        )
+    elif type == "RECOVERY":
         g.send_email_data["subject"] = "Código de recuperación de cuenta"
+        g.send_email_data["html_content"] = OtpTemplate.render_recover_otp_email(
+            first_name=user_contact["data"]["first_name"],
+            last_name=user_contact["data"]["last_name"],
+            otp_code=otp_token
+        )
+    else:
+        g.send_email_data["subject"] = "Código de verificación"
         g.send_email_data["html_content"] = OtpTemplate.render_account_recovery_email(otp_code=otp_token)
 
     g.response_code = "0200"
