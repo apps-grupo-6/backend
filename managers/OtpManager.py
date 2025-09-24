@@ -85,3 +85,40 @@ def check_otp_token_by_username(final_response, conn, cursor, username, otp_toke
         final_response["ok"] = False
 
     return final_response
+
+@DatabaseUtils.with_db_connection
+def get_user_by_verification_code(final_response, conn, cursor, username, verification_code, request_id):
+    try:
+        query = """
+            SELECT u.id, u.username, u.verification_expires_at, ui.first_name, ui.last_name, ui.contact_email
+            FROM users u
+            JOIN user_information ui ON ui.user_id = u.id
+            WHERE u.username = %s AND u.verification_token = %s AND u.email_verified = FALSE
+            LIMIT 1
+        """
+        cursor.execute(query, (username, verification_code))
+        final_response["data"] = cursor.fetchone()
+    except Exception as e:
+        logger.exception(f"{request_id} - an error occurred while getting user by verification code: {e}")
+        final_response["ok"] = False
+
+    return final_response
+
+@DatabaseUtils.with_db_connection
+def mark_user_as_verified(final_response, conn, cursor, user_id, request_id):
+    try:
+        query = """
+            UPDATE users 
+            SET email_verified = TRUE, 
+                verification_token = NULL, 
+                verification_expires_at = NULL,
+                updated_at = NOW()
+            WHERE id = %s
+        """
+        cursor.execute(query, (user_id,))
+        conn.commit()
+    except Exception as e:
+        logger.exception(f"{request_id} - an error occurred while marking user as verified: {e}")
+        final_response["ok"] = False
+
+    return final_response
