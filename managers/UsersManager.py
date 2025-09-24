@@ -5,9 +5,12 @@ from utils import DatabaseUtils
 def register_account(final_response, conn, cursor, username, password, first_name,
                      last_name, telephone, email, verification_token, verification_expires_at, request_id):
     try:
-        cursor.execute("""
+        procedure_call = """
             SELECT register_account(%s, %s, %s, %s, %s, %s, %s, %s)
-        """, (username, password, first_name, last_name, telephone, email, verification_token, verification_expires_at))
+        """
+        values = (username, password, first_name, last_name, telephone, email, verification_token, verification_expires_at)
+        
+        cursor.execute(procedure_call, values)
         
         result = cursor.fetchone()
         new_user_id = result['register_account'] if isinstance(result, dict) else result[0]
