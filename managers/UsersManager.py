@@ -1,43 +1,22 @@
 from configs.ServerConfig import logger
 from utils import DatabaseUtils
-import datetime
-import random
 
 @DatabaseUtils.with_db_connection
 def register_account(final_response, conn, cursor, username, password, first_name,
                      last_name, telephone, email, verification_token, verification_expires_at, request_id):
     try:
-        new_user_id = f"{int(datetime.datetime.now().timestamp())}{random.randint(100000, 999999)}"
+        cursor.execute("""
+            SELECT register_account(%s, %s, %s, %s, %s, %s, %s, %s)
+        """, (username, password, first_name, last_name, telephone, email, verification_token, verification_expires_at))
         
-        user_query = """
-            INSERT INTO users (id, username, password, email_verified, verification_token, verification_expires_at, created_at, updated_at)
-            VALUES (%s, %s, %s, FALSE, %s, %s, NOW(), NOW())
-        """
-        cursor.execute(user_query, (new_user_id, username, password, verification_token, verification_expires_at))
-        
-        info_query = """
-            INSERT INTO user_information (user_id, first_name, last_name, contact_email, telephone, created_at, updated_at)
-            VALUES (%s, %s, %s, %s, %s, NOW(), NOW())
-        """
-        cursor.execute(info_query, (new_user_id, first_name, last_name, email, telephone))
-        
-        controls_query = """
-            INSERT INTO user_controls (user_id, is_banned, is_suspicious, force_disconnect, created_at, updated_at)
-            VALUES (%s, FALSE, FALSE, FALSE, NOW(), NOW())
-        """
-        cursor.execute(controls_query, (new_user_id,))
-        
-        # Asignar rol de STUDENT por defecto
-        role_query = """
-            INSERT INTO user_roles (user_id, role_id, created_at)
-            VALUES (%s, 3, NOW())
-        """
-        cursor.execute(role_query, (new_user_id,))
+        result = cursor.fetchone()
+        new_user_id = result['register_account'] if isinstance(result, dict) else result[0]
         
         conn.commit()
         final_response["data"] = {"user_id": new_user_id}
+        
     except Exception as e:
-        logger.exception(f"{request_id} - an error occurred while registering user with verification: {e}")
+        logger.exception(f"{request_id} - an error occurred while registering user with stored procedure: {e}")
         final_response["ok"] = False
 
     return final_response
