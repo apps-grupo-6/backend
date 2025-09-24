@@ -21,6 +21,11 @@ def login(model, request_id):
     if get_user_info["error"]:
         return {}
 
+    if not get_user_info['data']['email_verified']:
+        logger.error(f"{request_id} - user's account is not verified")
+        g.response_code = "0412"
+        return {}
+
     user_id = get_user_info['data']['user_id']
     g.user_id = user_id
 
@@ -122,59 +127,3 @@ def refresh_token(model, request_id):
             "token": refreshed
         }
     }
-
-def recover_account(model, request_id):
-    username = model["username"]
-    new_password = model["new_password"]
-    otp_token = model["otp_token"]
-    TYPE = "RECOVER"
-
-    exists_username = UsersRepository.check_if_username_exists(username=username,
-                                                               request_id=request_id,
-                                                               errors_code_map={
-                                                                   "database_error_code": "0500",
-                                                                   "invalid_data_error_code": "0404"
-                                                               })
-
-    if exists_username["error"]:
-        return {}
-
-    user_id = exists_username["data"]["id"]
-    checked = AuthRepository.check_otp_token(user_id=user_id,
-                                             otp_token=otp_token,
-                                             type=TYPE,
-                                             request_id=request_id,
-                                             errors_code_map={
-                                                 "database_error_code": "0501",
-                                                 "invalid_data_error_code": "0405"
-                                             })
-
-    if checked["error"]:
-        return {}
-
-    if OtpUtils.check_token_expired(checked=checked):
-        logger.info(f"{request_id} - user's recovery otp_token is expired")
-        g.response_code = "0410"
-        return {}
-
-    hashed_password = UsersUtils.hash_password(plain_password=new_password)
-    updated = AuthRepository.set_new_password(user_id=user_id,
-                                              new_password=hashed_password,
-                                              request_id=request_id)
-
-    if not updated:
-        logger.critical(f"{request_id} - an error occurred while updating user's password")
-        g.response = "0502"
-        return {}
-
-    deleted = OtpUtils.delete_otp_token(user_id=user_id,
-                                        otp_token=otp_token,
-                                        type=TYPE,
-                                        request_id=request_id,
-                                        errors_code_map={"database_error_code": "0503"})
-
-    if not deleted:
-        return {}
-
-    g.response_code = "0200"
-    return {}
