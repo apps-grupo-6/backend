@@ -60,7 +60,6 @@ def update_user_information():
 def verify_registration():
     try:
         logger.info(f"{g.request_id} - starting verify_registration")
-        logger.info(f"{g.request_id} - starting mandatory fields check")
 
         data = request.json
         username = data.get("username")
@@ -81,17 +80,14 @@ def verify_registration():
             "detailed_description": {"error": ["Datos inválidos"]}
         }
 
-    logger.info(f"{g.request_id} - finished mandatory fields check")
     return UsersService.verify_otp_code(username=username, verification_code=verification_code, request_id=g.request_id)
 
 @bp.post("/reset-password")
 @ServerUtils.configure_request(description_code_map=UsersConfig.reset_password_code_map, method="POST", endpoint="reset-password")
 def reset_password():
     logger.info(f"{g.request_id} - starting reset_password")
-    logger.info(f"{g.request_id} - starting mandatory fields check")
 
     try:
-        # Validar campos con Marshmallow
         schema = UsersModel.reset_password()
         model = schema.load(request.json)
     except ValidationError as e:
@@ -103,7 +99,6 @@ def reset_password():
         g.response_code = "0400"
         return {"detailed_description": {"error": ["Datos inválidos"]}}
 
-    logger.info(f"{g.request_id} - finished mandatory fields check")
     return UsersService.reset_password_with_token(model=model, request_id=g.request_id)
 
 @bp.post("/resend-otp")
@@ -111,7 +106,6 @@ def reset_password():
 def resend_otp():
     try:
         logger.info(f"{g.request_id} - starting resend_otp")
-        logger.info(f"{g.request_id} - starting mandatory fields check")
 
         data = request.json
         model = UsersModel.resend_otp().load(data)
@@ -122,5 +116,4 @@ def resend_otp():
             "detailed_description": e.messages
         }
 
-    logger.info(f"{g.request_id} - finished mandatory fields check")
     return UsersService.resend_otp(model=model, request_id=g.request_id)
