@@ -54,4 +54,3 @@ def update_user_information():
 
     logger.info(f"{g.request_id} - finished mandatory fields check")
     return UsersService.update_user_information(model=model, user_id=g.user_id, request_id=g.request_id)
-
