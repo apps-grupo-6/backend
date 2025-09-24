@@ -60,3 +60,12 @@ reset_password_code_map = {
     "0500": ("the request could not be processed", 500),
     "0501": ("the request could not be processed", 500)
 }
+
+confirm_account_code_map = {
+    "0200": ("ok", 200),
+    "0400": ("bad request", 400),
+    "0404": ("invalid verification code", 404),
+    "0410": ("verification code expired", 400),
+    "0500": ("the request could not be processed", 500),
+    "0501": ("the request could not be processed", 500)
+}
