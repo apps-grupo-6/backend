@@ -74,7 +74,6 @@ def register_account(model, request_id):
 def verify_otp_code(username, verification_code, request_id):
     logger.info(f"{request_id} - verifying OTP code for username: {username}")
     
-    # Buscar en otp_tokens para REGISTRATION
     from repositories import OtpRepository
     registration_data = OtpRepository.check_otp_token_by_username(
         username=username,
@@ -90,7 +89,19 @@ def verify_otp_code(username, verification_code, request_id):
     if not registration_data["error"]:
         return _handle_registration_verification_new(username, verification_code, registration_data, request_id)
     
-    # Si no se encontró REGISTRATION, buscar RECOVERY en otp_tokens
+    initial_registration_data = UsersRepository.get_user_by_verification_code(
+        username=username,
+        verification_code=verification_code,
+        request_id=request_id,
+        errors_code_map={
+            "database_error_code": "0500",
+            "invalid_data_error_code": "0404"
+        }
+    )
+    
+    if not initial_registration_data["error"]:
+        return _handle_registration_verification(username, verification_code, initial_registration_data, request_id)
+    
     recovery_data = OtpRepository.check_otp_token_by_username(
         username=username,
         otp_token=verification_code,
