@@ -8,15 +8,9 @@ def create_request_log(final_response, conn, cursor, user_id, method, endpoint, 
             INSERT INTO requests (id, user_id, method, endpoint, code, execution_time)
             VALUES (%s, %s, %s, %s, %s, %s)
         """
-        # Si user_id es -1 (usuario no autenticado), usamos NULL
         actual_user_id = None if user_id == -1 else user_id
         
-        # Manejar valores vacíos para evitar errores de tipo
-        actual_method = method if method else 'UNKNOWN'
-        actual_endpoint = endpoint if endpoint else '/unknown'
-        actual_code = int(code) if code and str(code).isdigit() else 404  # Default 404 para endpoints desconocidos
-        
-        values = (request_id, actual_user_id, actual_method, actual_endpoint, actual_code, execution_time)
+        values = (request_id, actual_user_id, method, endpoint, int(code), execution_time)
 
         cursor.execute(query, values)
         conn.commit()
