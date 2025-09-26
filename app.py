@@ -1,4 +1,3 @@
-import awsgi
 from flask import Flask, g, jsonify, request
 from datetime import datetime
 from apscheduler.schedulers.background import BackgroundScheduler
@@ -103,9 +102,6 @@ def internal_error(error):
 @app.errorhandler(415)
 def internal_error(error):
     return {"error": "request body is empty"}, 415
-
-def lambda_handler(event, context):
-    return awsgi.response(app, event, context)
 
 def awake_crons():
     crons = {
