@@ -35,7 +35,7 @@ if not logger.handlers:  # it's like a singleton, just for not creating unnecess
 
 try:
     logger.info("Connecting to database")
-    connection_pool = pool.SimpleConnectionPool(
+    connection_pool = pool.ThreadedConnectionPool(
         minconn=1,
         maxconn=10,
         host=config.get("Database", "DB_HOST"),
