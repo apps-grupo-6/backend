@@ -54,7 +54,7 @@ def register_user(username, hashed_password, first_name, last_name, telephone,
         return {"flag": -1}
 
     logger.debug(f"{request_id} - user registered with verification successfully")
-    return {"flag": 1}
+    return {"flag": 1, "data": registered["data"]}
 
 @ServerUtils.set_final_response
 def check_if_username_doesnt_exist(username, request_id, errors_code_map):

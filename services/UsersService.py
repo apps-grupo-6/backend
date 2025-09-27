@@ -3,7 +3,7 @@ from configs.ServerConfig import logger
 import datetime, jwt
 from random import shuffle
 
-from repositories import UsersRepository
+from repositories import UsersRepository, OtpRepository
 from utils import UsersUtils
 from templates import UserTemplate, OtpTemplate
 from configs import AuthConfig
@@ -49,6 +49,18 @@ def register_account(model, request_id):
     if registered["error"]:
         return {}
 
+
+    otp_saved = OtpRepository.save_otp(
+        user_id=registered["data"]["user_id"],
+        otp_token=verification_token,
+        type="REGISTRATION",
+        request_id=request_id,
+        errors_code_map={"database_error_code": "0502"}
+    )
+
+    if otp_saved["error"]:
+        return {}
+
     g.send_email_data = {
         "subject": "Verifica tu cuenta - Código de activación",
         "user_email": contact_email,
@@ -74,7 +86,6 @@ def register_account(model, request_id):
 def verify_otp_code(username, verification_code, request_id):
     logger.info(f"{request_id} - verifying OTP code for username: {username}")
     
-    from repositories import OtpRepository
     registration_data = OtpRepository.check_otp_token_by_username(
         username=username,
         otp_token=verification_code,
@@ -156,7 +167,6 @@ def _handle_registration_verification_new(username, verification_code, otp_data,
     if verified["error"]:
         return {}
 
-    from repositories import OtpRepository
     OtpRepository.delete_otp(
         user_id=user_id,
         otp_token=verification_code,
@@ -274,7 +284,6 @@ def _handle_recovery_verification(username, verification_code, otp_data, request
             "error": "El código de recuperación ha expirado. Solicita un nuevo código."
         }
     
-    from repositories import OtpRepository
     OtpRepository.delete_otp(
         user_id=otp_info["user_id"],
         otp_token=verification_code,
@@ -401,7 +410,6 @@ def resend_otp(model, request_id):
                 "error": "La cuenta ya está verificada o no existe. No es posible reenviar el código de verificación."
             }
         
-        from repositories import OtpRepository
         
         otp_token_save = OtpRepository.save_otp(
             user_id=user_id,
@@ -437,15 +445,12 @@ def resend_otp(model, request_id):
             }
         )
         
-        if not user_verification_status["error"]:
+        if user_verification_status["error"]:
             logger.error(f"{request_id} - user '{username}' is not verified, cannot request RECOVERY OTP")
             g.response_code = "0412"
             return {
                 "error": "La cuenta debe estar verificada para poder solicitar recuperación. Usa el tipo REGISTRATION para verificar tu cuenta primero."
             }
-        
-        from repositories import OtpRepository
-        
         otp_token_save = OtpRepository.save_otp(
             user_id=user_id,
             otp_token=otp_token,
