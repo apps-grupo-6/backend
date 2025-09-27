@@ -6,6 +6,11 @@ create_location_code_map = {
     "0501": ("the request could not be processed", 500)
 }
 
+get_all_locations_code_map = {
+    "0200": ("ok", 200),
+    "0500": ("the request could not be processed", 500)
+}
+
 # ISO 3166-1 with A-2
 country_codes = [
     "AF", "AX", "AL", "DZ", "AS", "AD", "AO", "AI", "AQ", "AG",

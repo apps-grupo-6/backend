@@ -32,3 +32,15 @@ def create_location(model, user_id, request_id):
 
     g.response_code = "0200"
     return {}
+
+def get_all_locations(request_id):
+    all_locations = LocationsRepository.get_all_locations(request_id=request_id,
+                                                          errors_code_map={"database_error_code": "0500"})
+
+    if all_locations["error"]:
+        return {}
+
+    g.respose_code = "0200"
+    return {
+        "data": all_locations["data"]
+    }

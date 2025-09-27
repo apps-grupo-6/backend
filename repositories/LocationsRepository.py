@@ -35,3 +35,15 @@ def create_location(owner_id, country_code, city, address, name, request_id, err
 
     logger.debug(f"{request_id} - location created successfully")
     return {"flag": 1}
+
+@ServerUtils.set_final_response
+def get_all_locations(request_id, errors_code_map):
+    logger.info(f"{request_id} - retrieving all locations...")
+    locations_data = LocationsManager.get_all_locations(request_id=request_id)
+
+    if not locations_data["ok"]:
+        logger.critical(f"{request_id} - an error occurred while checking")
+        return {"flag": -1}
+
+    logger.debug(f"{request_id} - found {len(locations_data['data'])} gyms")
+    return {"flag": 1, "data": locations_data['data']}
