@@ -2,7 +2,8 @@ from configs.ServerConfig import logger
 from flask import g
 
 from managers import LocationsManager
-from repositories import UsersRepository
+from repositories import UsersRepository, LocationsRepository
+
 
 def create_location(model, user_id, request_id):
     country_code = model['country_code']
@@ -34,3 +35,15 @@ def create_location(model, user_id, request_id):
     logger.info(f"{request_id} - location created successfully")
     g.response_code = "0200"
     return {}
+
+def get_all_locations(request_id):
+    all_locations = LocationsRepository.get_all_locations(request_id=request_id,
+                                                          errors_code_map={"database_error_code": "0500"})
+
+    if all_locations["error"]:
+        return {}
+
+    g.respose_code = "0200"
+    return {
+        "data": all_locations["data"]
+    }

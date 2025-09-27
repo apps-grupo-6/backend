@@ -88,7 +88,6 @@ def check_if_user_exists(final_response, conn, cursor, user_id, request_id):
         """
         values = (user_id,)
 
-        logger.info(query%values)
         cursor.execute(query, values)
         final_response["data"] = cursor.fetchone()
     except:
