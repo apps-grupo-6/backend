@@ -5,7 +5,9 @@ from configs.ServerConfig import logger
 
 from utils import UsersUtils, AuthUtils, OtpUtils
 from configs import AuthConfig
-from repositories import AuthRepository, UsersRepository
+from repositories import AuthRepository, UsersRepository, OtpRepository
+from services import UsersService
+from templates import UserTemplate
 
 def login(model, request_id):
     username = model["username"]
@@ -19,6 +21,11 @@ def login(model, request_id):
                                                          "invalid_data_error_code": "0404"
                                                      })
     if get_user_info["error"]:
+        return {}
+
+    if not get_user_info['data']['email_verified']:
+        logger.error(f"{request_id} - user's account is not verified")
+        g.response_code = "0412"
         return {}
 
     user_id = get_user_info['data']['user_id']
@@ -122,7 +129,6 @@ def refresh_token(model, request_id):
             "token": refreshed
         }
     }
-
 def recover_account(model, request_id):
     username = model["username"]
     new_password = model["new_password"]
@@ -178,3 +184,93 @@ def recover_account(model, request_id):
 
     g.response_code = "0200"
     return {}
+
+def confirm_account(username, verification_code, request_id):
+    logger.info(f"{request_id} - confirming account for username: {username}")
+    
+    registration_data = OtpRepository.check_otp_token_by_username(
+        username=username,
+        otp_token=verification_code,
+        type="REGISTRATION",
+        request_id=request_id,
+        errors_code_map={
+            "database_error_code": "0500",
+            "invalid_data_error_code": "0404"
+        }
+    )
+    
+    if registration_data["error"]:
+        logger.error(f"{request_id} - invalid verification code for username: {username}")
+        g.response_code = "0404"
+        return {}
+    
+    otp_info = registration_data["data"]
+    user_id = otp_info["user_id"]
+    
+    if otp_info["expires_at"] < datetime.datetime.now():
+        logger.error(f"{request_id} - verification code expired for user: {username}")
+        g.response_code = "0410"
+        return {}
+    
+    verified = UsersRepository.mark_user_as_verified(
+        user_id=user_id,
+        request_id=request_id,
+        errors_code_map={"database_error_code": "0501"}
+    )
+    
+    if verified["error"]:
+        return {}
+    
+    OtpRepository.delete_otp(
+        user_id=user_id,
+        otp_token=verification_code,
+        type="REGISTRATION",
+        request_id=request_id,
+        errors_code_map={"database_error_code": "0501"}
+    )
+    
+    payload = {
+        "username": username,
+        "exp": datetime.datetime.utcnow() + datetime.timedelta(seconds=AuthConfig.jwt_exp_delta_seconds),
+        "user_id": user_id
+    }
+    
+    token = jwt.encode(payload, AuthConfig.jwt_secret, algorithm=AuthConfig.jwt_algorithm)
+    
+    user_contact = UsersRepository.get_user_contact_information(
+        user_id=user_id,
+        request_id=request_id,
+        errors_code_map={"database_error_code": "0501"}
+    )
+    
+    # Enviar email de bienvenida
+    if not user_contact["error"]:
+        g.send_email_data = {
+            "subject": "¡Bienvenido/a! Tu cuenta ha sido activada",
+            "user_email": user_contact["data"]["contact_email"],
+            "user_firstname": user_contact["data"]["first_name"],
+            "user_lastname": user_contact["data"]["last_name"],
+            "html_content": UserTemplate.render_register_email(
+                first_name=user_contact["data"]["first_name"],
+                last_name=user_contact["data"]["last_name"],
+                username=username
+            )
+        }
+    
+    logger.info(f"{request_id} - account confirmed and user logged in successfully")
+    g.response_code = "0200"
+    return {
+        "data": {
+            "message": "¡Cuenta verificada exitosamente! Ya estás logueado.",
+            "token": token,
+            "user": {
+                "username": username,
+                "first_name": user_contact["data"]["first_name"] if not user_contact["error"] else "",
+                "last_name": user_contact["data"]["last_name"] if not user_contact["error"] else "",
+                "email": user_contact["data"]["contact_email"] if not user_contact["error"] else ""
+            }
+        }
+    }
+
+def verify_otp_code(username, verification_code, request_id):
+    return OtpUtils.handle_otp_verification(username, verification_code, request_id)

@@ -1,4 +1,4 @@
-from managers import UsersManager
+from managers import UsersManager, OtpManager
 from configs.ServerConfig import logger
 from utils import ServerUtils
 
@@ -37,21 +37,23 @@ def get_user_contact_information(user_id, request_id, errors_code_map):
 
 @ServerUtils.set_final_response
 def register_user(username, hashed_password, first_name, last_name, telephone,
-                  contact_email, request_id, errors_code_map):
-    logger.info(f"{request_id} - trying to register username '{username}'...")
+                  contact_email, verification_token, verification_expires_at, request_id, errors_code_map):
+    logger.info(f"{request_id} - trying to register username '{username}' with verification...")
     registered = UsersManager.register_account(username=username,
                                                password=hashed_password,
                                                first_name=first_name,
                                                last_name=last_name,
                                                telephone=telephone,
                                                email=contact_email,
+                                               verification_token=verification_token,
+                                               verification_expires_at=verification_expires_at,
                                                request_id=request_id)
 
     if not registered["ok"]:
         logger.critical(f"{request_id} - an error occurred while registering")
         return {"flag": -1}
 
-    logger.debug(f"{request_id} - user contact registered successfully")
+    logger.debug(f"{request_id} - user registered with verification successfully")
     return {"flag": 1}
 
 @ServerUtils.set_final_response
@@ -99,3 +101,99 @@ def check_if_username_exists(username, request_id, errors_code_map):
 
     logger.debug(f"{request_id} - username exists")
     return {"flag": 1, "data": exists_username['data']}
+
+
+@ServerUtils.set_final_response
+def get_user_by_verification_code(username, verification_code, request_id, errors_code_map):
+    logger.info(f"{request_id} - getting user by verification code for username '{username}'...")
+    user_data = OtpManager.get_user_by_verification_code(username=username,
+                                                         verification_code=verification_code,
+                                                         request_id=request_id)
+
+    if not user_data["ok"]:
+        logger.critical(f"{request_id} - an error occurred while getting user")
+        return {"flag": -1}
+
+    if not user_data["data"]:
+        logger.error(f"{request_id} - invalid username or verification code")
+        return {"flag": 0}
+
+    logger.debug(f"{request_id} - user found by verification code")
+    return {"flag": 1, "data": user_data['data']}
+
+@ServerUtils.set_final_response
+def mark_user_as_verified(user_id, request_id, errors_code_map):
+    logger.info(f"{request_id} - marking user_id '{user_id}' as verified...")
+    verified = OtpManager.mark_user_as_verified(user_id=user_id, request_id=request_id)
+
+    if not verified["ok"]:
+        logger.critical(f"{request_id} - an error occurred while marking as verified")
+        return {"flag": -1}
+
+    logger.debug(f"{request_id} - user marked as verified successfully")
+    return {"flag": 1}
+
+@ServerUtils.set_final_response
+def get_user_id_by_username(username, request_id, errors_code_map):
+    logger.info(f"{request_id} - getting user_id for username '{username}'...")
+    user_data = UsersManager.does_username_exist(username=username, request_id=request_id)
+
+    if not user_data["ok"]:
+        logger.critical(f"{request_id} - an error occurred while getting user_id")
+        return {"flag": -1}
+
+    if not user_data["data"]:
+        logger.error(f"{request_id} - username does not exist")
+        return {"flag": 0}
+
+    logger.debug(f"{request_id} - user_id retrieved successfully")
+    return {"flag": 1, "data": user_data['data']}
+
+
+@ServerUtils.set_final_response
+def check_user_verification_status(username, request_id, errors_code_map):
+    logger.info(f"{request_id} - checking verification status for username '{username}'...")
+    user_status = UsersManager.get_user_verification_status(username=username, request_id=request_id)
+
+    if not user_status["ok"]:
+        logger.critical(f"{request_id} - an error occurred while checking verification status")
+        return {"flag": -1}
+
+    if not user_status["data"]:
+        logger.error(f"{request_id} - username does not exist")
+        return {"flag": 0}
+
+    logger.debug(f"{request_id} - user verification status retrieved successfully")
+    return {"flag": 1, "data": user_status['data']}
+
+@ServerUtils.set_final_response
+def update_user_password(user_id, new_password, request_id, errors_code_map):
+    logger.info(f"{request_id} - updating password for user_id '{user_id}'...")
+    updated = UsersManager.update_user_password(
+        user_id=user_id,
+        new_password=new_password,
+        request_id=request_id
+    )
+
+    if not updated["ok"]:
+        logger.critical(f"{request_id} - an error occurred while updating password")
+        return {"flag": -1}
+
+    logger.debug(f"{request_id} - password updated successfully")
+    return {"flag": 1}
+
+@ServerUtils.set_final_response
+def get_username_by_user_id(user_id, request_id, errors_code_map):
+    logger.info(f"{request_id} - getting username for user_id '{user_id}'...")
+    username_data = UsersManager.get_username_by_user_id(user_id=user_id, request_id=request_id)
+
+    if not username_data["ok"]:
+        logger.critical(f"{request_id} - an error occurred while getting username")
+        return {"flag": -1}
+
+    if not username_data["data"]:
+        logger.error(f"{request_id} - user_id does not exist")
+        return {"flag": 0}
+
+    logger.debug(f"{request_id} - username retrieved successfully")
+    return {"flag": 1, "data": username_data['data']}

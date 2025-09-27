@@ -6,10 +6,11 @@ def get_username_info(final_response, conn, cursor, username, request_id):
     try:
         query = """
             SELECT 
-                id as user_id, 
-                password
-            FROM users
-            WHERE username = %s
+                u.id as user_id, 
+                u.password,
+                u.email_verified
+            FROM users u
+            WHERE u.username = %s
             LIMIT 1;
         """
         values = (username,)
@@ -18,28 +19,6 @@ def get_username_info(final_response, conn, cursor, username, request_id):
         final_response["data"] = cursor.fetchone()
     except:
         logger.exception(f"{request_id} - an error occurred while registering the user")
-        final_response["ok"] = False
-
-    return final_response
-
-@DatabaseUtils.with_db_connection
-def check_otp_token(final_response, conn, cursor, user_id, otp_token, type, request_id):
-    try:
-        query = """
-            SELECT expires_at
-            FROM otp_tokens
-            WHERE 
-                user_id = %s
-                AND token = %s
-                AND type = %s
-            LIMIT 1;
-        """
-        values = (user_id, otp_token, type)
-
-        cursor.execute(query, values)
-        final_response["data"] = cursor.fetchone()
-    except:
-        logger.exception(f"{request_id} - an error occurred while checking user otp token")
         final_response["ok"] = False
 
     return final_response
@@ -94,25 +73,6 @@ def check_if_user_exists(final_response, conn, cursor, user_id, request_id):
         logger.info(final_response["data"])
     except:
         logger.exception(f"{request_id} - an error occurred while checking if user exists")
-        final_response["ok"] = False
-
-    return final_response
-
-@DatabaseUtils.with_db_connection
-def set_new_password(final_response, conn, cursor, new_password, user_id, request_id):
-    try:
-        query = f"""
-            UPDATE users
-            SET password_updated_at = NOW(),
-                password = %s
-            WHERE id = %s
-        """
-        values = (new_password, user_id)
-
-        cursor.execute(query, values)
-        conn.commit()
-    except:
-        logger.exception(f"{request_id} - an error occurred while trying to update user's password")
         final_response["ok"] = False
 
     return final_response
