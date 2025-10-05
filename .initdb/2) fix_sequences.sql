@@ -2,8 +2,6 @@ SELECT setval('public.users_id_seq', (SELECT COALESCE(MAX(id), 0) + 1 FROM publi
 SELECT setval('public.user_roles_id_seq', (SELECT COALESCE(MAX(id), 0) + 1 FROM public.user_roles), false);
 SELECT setval('public.roles_id_seq', (SELECT COALESCE(MAX(id), 0) + 1 FROM public.roles), false);
 SELECT setval('public.role_permissions_id_seq', (SELECT COALESCE(MAX(id), 0) + 1 FROM public.role_permissions), false);
-SELECT setval('public.user_information_id_seq', (SELECT COALESCE(MAX(id), 0) + 1 FROM public.user_information), false);
-SELECT setval('public.user_controls_id_seq', (SELECT COALESCE(MAX(id), 0) + 1 FROM public.user_controls), false);
 SELECT setval('public.otp_tokens_id_seq', (SELECT COALESCE(MAX(id), 0) + 1 FROM public.otp_tokens), false);
 SELECT setval('public.disciplines_id_seq', (SELECT COALESCE(MAX(id), 0) + 1 FROM public.disciplines), false);
 SELECT setval('public.locations_id_seq', (SELECT COALESCE(MAX(id), 0) + 1 FROM public.locations), false);
