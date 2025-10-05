@@ -10,7 +10,7 @@ login_code_map = {
     "0400": ("bad request", 400),
     "0404": ("invalid username", 404),
     "0410": ("username or password are incorrect", 400),
-    "0412": ("user's account is not verified", 400),
+    "0411": ("user's account is not verified", 400),
     "0500": ("the request could not be processed", 500)
 }
 
@@ -19,9 +19,11 @@ login_otp_code_map = {
     "0400": ("bad request", 400),
     "0404": ("invalid otp_token", 404),
     "0410": ("otp_token expired", 400),
+    "0411": ("the user did not confirm his account yet", 400),
     "0500": ("the request could not be processed", 500),
     "0501": ("the request could not be processed", 500),
-    "0502": ("the request could not be processed", 500)
+    "0502": ("the request could not be processed", 500),
+    "0503": ("the request could not be processed", 500)
 }
 
 refresh_token_code_map = {
@@ -32,33 +34,16 @@ refresh_token_code_map = {
     "0500": ("the request could not be processed", 500),
 }
 
-verify_otp_code_map = {
+recover_account_code_map = {
     "0200": ("ok", 200),
     "0400": ("bad request", 400),
-    "0404": ("invalid verification code", 404),
-    "0410": ("verification code expired", 400),
-    "0500": ("the request could not be processed", 500),
-    "0501": ("the request could not be processed", 500)
-}
-
-resend_otp_code_map = {
-    "0200": ("ok", 200),
-    "0400": ("bad request", 400),
-    "0404": ("username not found", 404),
-    "0411": ("account already verified or invalid request", 400),
-    "0412": ("account not verified, cannot request recovery", 400),
+    "0404": ("invalid username", 400),
+    "0405": ("invalid otp_token", 400),
+    "0410": ("otp_token expired", 400),
     "0500": ("the request could not be processed", 500),
     "0501": ("the request could not be processed", 500),
-    "0502": ("the request could not be processed", 500)
-}
-
-reset_password_code_map = {
-    "0200": ("ok", 200),
-    "0400": ("bad request", 400),
-    "0413": ("invalid reset token", 401),
-    "0414": ("reset token expired", 401),
-    "0500": ("the request could not be processed", 500),
-    "0501": ("the request could not be processed", 500)
+    "0502": ("the request could not be processed", 500),
+    "0503": ("the request could not be processed", 500)
 }
 
 confirm_account_code_map = {
@@ -67,5 +52,7 @@ confirm_account_code_map = {
     "0404": ("invalid verification code", 404),
     "0410": ("verification code expired", 400),
     "0500": ("the request could not be processed", 500),
-    "0501": ("the request could not be processed", 500)
+    "0501": ("the request could not be processed", 500),
+    "0502": ("the request could not be processed", 500),
+    "0503": ("the request could not be processed", 500)
 }

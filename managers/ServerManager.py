@@ -8,9 +8,8 @@ def create_request_log(final_response, conn, cursor, user_id, method, endpoint, 
             INSERT INTO requests (id, user_id, method, endpoint, code, execution_time)
             VALUES (%s, %s, %s, %s, %s, %s)
         """
-        actual_user_id = None if user_id == -1 else user_id
         
-        values = (request_id, actual_user_id, method, endpoint, int(code), execution_time)
+        values = (request_id, user_id, method, endpoint, code, execution_time)
 
         cursor.execute(query, values)
         conn.commit()

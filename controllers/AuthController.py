@@ -4,7 +4,7 @@ from configs.ServerConfig import logger
 
 from models import AuthModel
 from configs import AuthConfig
-from services import AuthService, UsersService
+from services import AuthService
 from utils import AuthUtils, ServerUtils
 
 bp = Blueprint('auth', __name__)
@@ -29,8 +29,8 @@ def login():
     return AuthService.login(model=model, request_id=g.request_id)
 
 @bp.post("/otp")
-@AuthUtils.validate_session
 @ServerUtils.configure_request(description_code_map=AuthConfig.login_otp_code_map, method="POST", endpoint="otp")
+@AuthUtils.validate_session
 def login_otp():
     try:
         logger.info(f"{g.request_id} - starting login_otp")
@@ -67,37 +67,15 @@ def refresh_token():
     logger.info(f"{g.request_id} - finished mandatory fields check")
     return AuthService.refresh_token(model=model, request_id=g.request_id)
 
-@bp.post("/verify")
-@ServerUtils.configure_request(description_code_map=AuthConfig.verify_otp_code_map, method="POST", endpoint="verify")
-def verify_otp():
+@bp.post("/recover")
+@ServerUtils.configure_request(description_code_map=AuthConfig.recover_account_code_map, method="POST", endpoint="recover")
+def recover_account():
     try:
-        logger.info(f"{g.request_id} - starting verify_otp")
+        logger.info(f"{g.request_id} - starting recover_account")
+        logger.info(f"{g.request_id} - starting mandatory fields check")
 
         data = request.json
-        model = AuthModel.verify_otp().load(data)
-    except ValidationError as e:
-        logger.exception(f"{g.request_id} - there are absent mandatory fields")
-        g.response_code = "0400"
-        return {
-            "detailed_description": e.messages
-        }
-    except Exception as e:
-        logger.exception(f"{g.request_id} - error parsing request data: {str(e)}")
-        g.response_code = "0400"
-        return {
-            "detailed_description": {"error": [f"Error parsing request data: {str(e)}"]}
-        }
-
-    return AuthService.verify_otp_code(username=model["username"], verification_code=model["verification_code"], request_id=g.request_id)
-
-@bp.post("/resend-otp")
-@ServerUtils.configure_request(description_code_map=AuthConfig.resend_otp_code_map, method="POST", endpoint="resend-otp")
-def resend_otp():
-    try:
-        logger.info(f"{g.request_id} - starting resend_otp")
-
-        data = request.json
-        model = AuthModel.resend_otp().load(data)
+        model = AuthModel.recover_account().load(data)
     except ValidationError as e:
         logger.exception(f"{g.request_id} - there are absent mandatory fields")
         g.response_code = "0400"
@@ -105,42 +83,24 @@ def resend_otp():
             "detailed_description": e.messages
         }
 
-    return UsersService.resend_otp(model=model, request_id=g.request_id)
-
-@bp.post("/reset-password")
-@ServerUtils.configure_request(description_code_map=AuthConfig.reset_password_code_map, method="POST", endpoint="reset-password")
-def reset_password():
-    logger.info(f"{g.request_id} - starting reset_password")
-
-    try:
-        schema = AuthModel.reset_password()
-        model = schema.load(request.json)
-    except ValidationError as e:
-        logger.error(f"{g.request_id} - validation error: {e.messages}")
-        g.response_code = "0400"
-        return {"detailed_description": e.messages}
-    except Exception as e:
-        logger.exception(f"{g.request_id} - error parsing request data: {str(e)}")
-        g.response_code = "0400"
-        return {"detailed_description": {"error": [f"Error parsing request data: {str(e)}"]}}
-
-    return UsersService.reset_password_with_token(model=model, request_id=g.request_id)
+    logger.info(f"{g.request_id} - finished mandatory fields check")
+    return AuthService.recover_account(model=model, request_id=g.request_id)
 
 @bp.post("/confirmAccount")
 @ServerUtils.configure_request(description_code_map=AuthConfig.confirm_account_code_map, method="POST", endpoint="confirmAccount")
 def confirm_account():
-    logger.info(f"{g.request_id} - starting confirm_account")
-
     try:
-        schema = AuthModel.verify_otp()
-        model = schema.load(request.json)
-    except ValidationError as e:
-        logger.error(f"{g.request_id} - validation error: {e.messages}")
-        g.response_code = "0400"
-        return {"detailed_description": e.messages}
-    except Exception as e:
-        logger.exception(f"{g.request_id} - error parsing request data: {str(e)}")
-        g.response_code = "0400"
-        return {"detailed_description": {"error": [f"Error parsing request data: {str(e)}"]}}
+        logger.info(f"{g.request_id} - starting confirm_account")
+        logger.info(f"{g.request_id} - starting mandatory fields check")
 
-    return AuthService.confirm_account(username=model["username"], verification_code=model["verification_code"], request_id=g.request_id)
+        data = request.json
+        model = AuthModel.confirm_account().load(data)
+    except ValidationError as e:
+        logger.exception(f"{g.request_id} - there are absent mandatory fields")
+        g.response_code = "0400"
+        return {
+            "detailed_description": e.messages
+        }
+
+    logger.info(f"{g.request_id} - finished mandatory fields check")
+    return AuthService.confirm_account(model=model, request_id=g.request_id)

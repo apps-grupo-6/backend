@@ -42,9 +42,10 @@ def set_final_response(func):
             final_response["ok"] = False
             g.response_code = kwargs["errors_code_map"]["database_error_code"]
             final_response["error"] = True
-        elif result["flag"] == 0: # no results found
+        elif result["flag"] == 0: # no results found or specific checks
             g.response_code = kwargs["errors_code_map"]["invalid_data_error_code"]
             final_response["error"] = True
+            final_response["data"] = result["data"] if "data" in result else {} # in case some data were required to check
         else: # flag == 1 -> results were found or action was done properly
             final_response["data"] = result["data"] if "data" in result else {}
         return final_response

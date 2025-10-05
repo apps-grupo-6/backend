@@ -31,7 +31,7 @@ def create_location():
 
 @bp.get("/")
 @ServerUtils.configure_request(description_code_map=LocationsConfig.get_all_locations_code_map, method="GET")
-#@AuthUtils.validate_session
+@AuthUtils.validate_session
 def get_all_locations():
     logger.info(f"{g.request_id} - starting get_all_locations")
     return LocationsService.get_all_locations(request_id=g.request_id)

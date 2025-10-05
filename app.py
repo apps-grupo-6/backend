@@ -38,7 +38,6 @@ def before_request():
         logger.info(f"{g.request_id} - request body: {request.json}")
     else:
         logger.info(f"{g.request_id} - request method: {request.method}")
-    logger.info(f"{g.request_id} - request body: {request.get_data(as_text=True)}")
 
 @app.after_request
 def after_request(response):
@@ -93,7 +92,7 @@ def after_request(response):
 
 @app.errorhandler(404)
 def not_found(error):
-    return {"error": "not found"}, 404
+    return {"error": "endpoint not found"}, 404
 
 @app.errorhandler(405)
 def internal_error(error):
@@ -126,15 +125,16 @@ def awake_crons():
     logger.info(f"Awaken {len(crons)} crons")
 
 
+for check in run_check:
+    controller_name, controller_enabled = check.split("=")
+
+    if controller_enabled == "1":
+        logger.debug(msg=f"{controller_name} is enabled")
+        bp = CONTROLLERS_BP[controller_name]
+        app.register_blueprint(bp, url_prefix=f"/api/{controller_name}")
+
+awake_crons()
+
 if __name__ == "__main__":
-    for check in run_check:
-        controller_name, controller_enabled = check.split("=")
-
-        if controller_enabled == "1":
-            logger.debug(msg=f"{controller_name} is enabled")
-            bp = CONTROLLERS_BP[controller_name]
-            app.register_blueprint(bp, url_prefix=f"/api/{controller_name}")
-
-    awake_crons()
     logger.info("Starting backend...")
     app.run(debug=True, host='0.0.0.0', port=5000)

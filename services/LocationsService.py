@@ -40,7 +40,7 @@ def get_all_locations(request_id):
     if all_locations["error"]:
         return {}
 
-    g.respose_code = "0200"
+    g.response_code = "0200"
     return {
         "data": all_locations["data"]
     }

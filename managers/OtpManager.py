@@ -5,7 +5,7 @@ from utils import DatabaseUtils
 def check_if_user_has_active_otp(final_response, conn, cursor, user_id, type, request_id):
     try:
         query = """
-            SELECT expires_at
+            SELECT expires_at, token as otp_token
             FROM otp_tokens
             WHERE 
                 user_id = %s
@@ -108,17 +108,39 @@ def get_user_by_verification_code(final_response, conn, cursor, username, verifi
 def mark_user_as_verified(final_response, conn, cursor, user_id, request_id):
     try:
         query = """
-            UPDATE users 
-            SET email_verified = TRUE, 
-                verification_token = NULL, 
-                verification_expires_at = NULL,
-                updated_at = NOW()
-            WHERE id = %s
+            UPDATE user_controls 
+            SET email_verified = TRUE,
+                email_verified_at = NOW()
+            WHERE user_id = %s
         """
-        cursor.execute(query, (user_id,))
+        values = (user_id,)
+
+        cursor.execute(query, values)
         conn.commit()
     except Exception as e:
         logger.exception(f"{request_id} - an error occurred while marking user as verified: {e}")
+        final_response["ok"] = False
+
+    return final_response
+
+@DatabaseUtils.with_db_connection
+def check_otp_token_by_user_id(final_response, conn, cursor, user_id, otp_token, type, request_id):
+    try:
+        query = """
+            SELECT expires_at
+            FROM otp_tokens ot
+            WHERE 
+                ot.user_id = %s
+                AND ot.token = %s
+                AND ot.type = %s
+            LIMIT 1;
+        """
+        values = (user_id, otp_token, type)
+
+        cursor.execute(query, values)
+        final_response["data"] = cursor.fetchone()
+    except:
+        logger.exception(f"{request_id} - an error occurred while checking otp_token by user_id")
         final_response["ok"] = False
 
     return final_response

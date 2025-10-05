@@ -1,5 +1,18 @@
 FROM python:3.11-slim
 
+# Variables de entorno para evitar archivos .pyc y bufer de logs
+ENV PYTHONDONTWRITEBYTECODE=1
+ENV PYTHONUNBUFFERED=1
+
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends \
+        bash \
+        vim \
+        iputils-ping \
+        netcat-traditional \
+        postgresql-client \
+    && rm -rf /var/lib/apt/lists/*
+
 WORKDIR /app
 
 COPY requirements.txt .

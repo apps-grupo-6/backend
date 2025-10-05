@@ -29,3 +29,22 @@ def create_otp():
 
     logger.info(f"{g.request_id} - finished mandatory fields check")
     return OtpServices.create_otp(model=model, user_id=g.user_id, request_id=g.request_id)
+
+@bp.post("/resend")
+@ServerUtils.configure_request(description_code_map=OtpConfig.resend_otp_code_map, method="POST", endpoint="resend")
+def resend_otp():
+    try:
+        logger.info(f"{g.request_id} - starting resend_otp")
+        logger.info(f"{g.request_id} - starting mandatory fields check")
+
+        data = request.json
+        model = OtpModel.resend_otp().load(data)
+    except ValidationError as e:
+        logger.exception(f"{g.request_id} - there are absent mandatory fields")
+        g.response_code = "0400"
+        return {
+            "detailed_description": e.messages
+        }
+
+    logger.info(f"{g.request_id} - finished mandatory fields check")
+    return OtpServices.resend_otp(model=model, request_id=g.request_id)

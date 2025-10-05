@@ -8,8 +8,9 @@ def get_username_info(final_response, conn, cursor, username, request_id):
             SELECT 
                 u.id as user_id, 
                 u.password,
-                u.email_verified
+                uc.email_verified
             FROM users u
+            JOIN user_controls uc ON uc.user_id = u.id
             WHERE u.username = %s
             LIMIT 1;
         """
@@ -70,7 +71,6 @@ def check_if_user_exists(final_response, conn, cursor, user_id, request_id):
 
         cursor.execute(query, values)
         final_response["data"] = cursor.fetchone()["data"]
-        logger.info(final_response["data"])
     except:
         logger.exception(f"{request_id} - an error occurred while checking if user exists")
         final_response["ok"] = False
@@ -91,6 +91,25 @@ def update_user_last_login(final_response, conn, cursor, user_id, request_id):
         conn.commit()
     except:
         logger.exception(f"{request_id} - an error occurred while trying to update last login")
+        final_response["ok"] = False
+
+    return final_response
+
+@DatabaseUtils.with_db_connection
+def set_new_password(final_response, conn, cursor, new_password, user_id, request_id):
+    try:
+        query = f"""
+            UPDATE users
+            SET password_updated_at = NOW(),
+                password = %s
+            WHERE id = %s
+        """
+        values = (new_password, user_id)
+
+        cursor.execute(query, values)
+        conn.commit()
+    except:
+        logger.exception(f"{request_id} - an error occurred while trying to update user's password")
         final_response["ok"] = False
 
     return final_response

@@ -70,8 +70,9 @@ def validate_session(func):
                 if check_endpoint[-1] == "/":
                     check_endpoint = check_endpoint[:-1]
 
+                logger.debug(f"{g.request_id} - the user is trying to use endpoint: [{g.method}] {g.endpoint}")
                 if check_endpoint not in user_permissions:
-                    logger.error(f"{g.request_id} - user_id '{user_id}' cannot use endpoint: '{check_endpoint}'")
+                    logger.error(f"{g.request_id} - user_id '{user_id}' cannot use this endpoint")
                     g.response_code = "9999"
                     g.alert_description = f"user_id '{user_id}' tried to use an endpoint '{check_endpoint}' but its role does not allow it."
                     return {"code": "0403", "description": "you are not allowed to use this function"}, 403
@@ -83,7 +84,7 @@ def validate_session(func):
         except jwt.ExpiredSignatureError:
             logger.error(f"{g.request_id} - jwt token has expired")
             g.response_code = '0401'
-            return {"code": "0401", "description": "token has expired"}, 401
+            return {"code": "0401", "description": "jwt token has expired"}, 401
         except jwt.InvalidTokenError:
             logger.error(f"{g.request_id} - jwt token is invalid")
             g.response_code = '0401'
@@ -93,7 +94,7 @@ def validate_session(func):
 
     return wrapper
 
-def check_jwt_token(jwt_token=""):
+def check_jwt_token(jwt_token):
     final_response = {
         "data": {},
         "error": True,

@@ -13,13 +13,11 @@ def register_account(final_response, conn, cursor, username, password, first_nam
         cursor.execute(procedure_call, values)
         
         result = cursor.fetchone()
-        new_user_id = result['register_account'] if isinstance(result, dict) else result[0]
-        
         conn.commit()
+        new_user_id = result['register_account']
         final_response["data"] = {"user_id": new_user_id}
-        
     except Exception as e:
-        logger.exception(f"{request_id} - an error occurred while registering user with stored procedure: {e}")
+        logger.exception(f"{request_id} - an error occurred while registering user with stored procedure")
         final_response["ok"] = False
 
     return final_response
@@ -28,9 +26,14 @@ def register_account(final_response, conn, cursor, username, password, first_nam
 def get_user_information(final_response, conn, cursor, user_id, request_id):
     try:
         query = """
-            SELECT contact_email, first_name, last_name, telephone
-            FROM user_information
-            WHERE user_id = %s
+            SELECT u.username,
+                   ui.contact_email, 
+                   ui.first_name, 
+                   ui.last_name, 
+                   ui.telephone
+            FROM user_information ui
+            JOIN users u on u.id = ui.user_id
+            WHERE ui.user_id = %s
             LIMIT 1;
         """
         values = (user_id,)
@@ -100,21 +103,38 @@ def update_user(final_response, conn, cursor, update_columns, update_values, req
 
     return final_response
 
-
-
 @DatabaseUtils.with_db_connection
 def get_user_verification_status(final_response, conn, cursor, username, request_id):
     try:
         query = """
-            SELECT email_verified
-            FROM users
-            WHERE username = %s
+            SELECT uc.email_verified
+            FROM users u
+            JOIN user_control uc ON uc.user_id = u.id
+            WHERE u.username = %s
             LIMIT 1
         """
         cursor.execute(query, (username,))
         final_response["data"] = cursor.fetchone()
     except Exception as e:
-        logger.exception(f"{request_id} - an error occurred while getting user verification status: {e}")
+        logger.exception(f"{request_id} - an error occurred while getting user verification status")
+        final_response["ok"] = False
+
+    return final_response
+
+@DatabaseUtils.with_db_connection
+def check_user_verification_status_by_user_id(final_response, conn, cursor, user_id, request_id):
+    try:
+        query = """
+            SELECT uc.email_verified AS verified
+            FROM users u
+            JOIN user_controls uc ON uc.user_id = u.id
+            WHERE u.id = %s
+            LIMIT 1
+        """
+        cursor.execute(query, (user_id,))
+        final_response["data"] = cursor.fetchone()
+    except Exception as e:
+        logger.exception(f"{request_id} - an error occurred while getting user verification status")
         final_response["ok"] = False
 
     return final_response
@@ -131,7 +151,7 @@ def update_user_password(final_response, conn, cursor, user_id, new_password, re
         cursor.execute(query, (new_password, user_id))
         conn.commit()
     except Exception as e:
-        logger.exception(f"{request_id} - an error occurred while updating user password: {e}")
+        logger.exception(f"{request_id} - an error occurred while updating user password")
         final_response["ok"] = False
 
     return final_response
@@ -148,7 +168,7 @@ def get_username_by_user_id(final_response, conn, cursor, user_id, request_id):
         cursor.execute(query, (user_id,))
         final_response["data"] = cursor.fetchone()
     except Exception as e:
-        logger.exception(f"{request_id} - an error occurred while getting username by user_id: {e}")
+        logger.exception(f"{request_id} - an error occurred while getting username by user_id")
         final_response["ok"] = False
 
     return final_response

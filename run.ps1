@@ -1,21 +1,37 @@
-echo "==> Deteniendo y eliminando todos los contenedores..."
-docker stop $(docker ps -aq) 2>/dev/null
-docker rm -f $(docker ps -aq) 2>/dev/null
+Write-Host "==> Stopping and removing all containers..." -ForegroundColor Cyan
+$containers = docker ps -aq
+if ($containers) {
+    docker stop $containers
+    docker rm -f $containers
+    Write-Host "Containers removed successfully." -ForegroundColor Green
+} else {
+    Write-Host "No containers to stop or remove." -ForegroundColor Yellow
+}
 
-echo "==> Eliminando imágenes sin usar..."
-docker rmi -f $(docker images -aq) 2>/dev/null
+Write-Host "`n==> Removing unused images..." -ForegroundColor Cyan
+$images = docker images -aq
+if ($images) {
+    docker rmi -f $images
+    Write-Host "Images removed successfully." -ForegroundColor Green
+} else {
+    Write-Host "No images to remove." -ForegroundColor Yellow
+}
 
-echo "==> Eliminando volúmenes sin usar..."
-docker volume prune -f
+Write-Host "`n==> Removing unused volumes..." -ForegroundColor Cyan
+docker volume prune -f | Out-Null
+Write-Host "Volumes removed." -ForegroundColor Green
 
-echo "==> Eliminando redes sin usar..."
-docker network prune -f
+Write-Host "`n==> Removing unused networks..." -ForegroundColor Cyan
+docker network prune -f | Out-Null
+Write-Host "Networks removed." -ForegroundColor Green
 
-echo "==> Construyendo imágenes con Docker Compose (sin caché)..."
+Write-Host "`n==> Building images with docker compose (no cache)..." -ForegroundColor Blue
 docker-compose build --no-cache
+Write-Host "Images built successfully." -ForegroundColor Green
 
-echo "==> Levantando contenedores en segundo plano..."
+Write-Host "`n==> Starting containers in detached mode..." -ForegroundColor Blue
 docker-compose up -d
+Write-Host "Containers started successfully." -ForegroundColor Green
 
-echo "==> Logs en vivo del backend..."
+Write-Host "`n==> Showing live logs of the backend..." -ForegroundColor Magenta
 docker-compose logs -f backend

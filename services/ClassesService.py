@@ -101,7 +101,7 @@ def get_user_upcoming_classes(user_id, request_id):
 def get_class(class_id, request_id):
     class_information = ClassesUtils.check_and_get_class_information(class_id=class_id,
                                                                      request_id=request_id,
-                                                                     error_code_maps={
+                                                                     errors_code_map={
                                                                          "database_error_code": "0500",
                                                                          "invalid_data_error_code": "0404"
                                                                      })
@@ -119,7 +119,7 @@ def update_class(model, class_id, user_id, request_id):
 
     class_information = ClassesUtils.check_and_get_class_information(class_id=class_id,
                                                                      request_id=request_id,
-                                                                     error_code_maps={
+                                                                     errors_code_map={
                                                                          "database_error_code": "0500",
                                                                          "invalid_data_error_code": "0404"
                                                                      })
@@ -194,7 +194,7 @@ def update_class(model, class_id, user_id, request_id):
 def finish_class(class_id, user_id, request_id):
     class_information = ClassesUtils.check_and_get_class_information(class_id=class_id,
                                                                      request_id=request_id,
-                                                                     error_code_maps={
+                                                                     errors_code_map={
                                                                          "database_error_code": "0500",
                                                                          "invalid_data_error_code": "0404"
                                                                      })
@@ -234,7 +234,7 @@ def finish_class(class_id, user_id, request_id):
 def add_class_participant(class_id, user_id, request_id):
     class_information = ClassesUtils.check_and_get_class_information(class_id=class_id,
                                                                      request_id=request_id,
-                                                                     error_code_maps={
+                                                                     errors_code_map={
                                                                          "database_error_code": "0500",
                                                                          "invalid_data_error_code": "0404"
                                                                      })

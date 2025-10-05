@@ -20,13 +20,12 @@ def get_username_info(username, request_id, errors_code_map):
 
 
 # it's okay that this function does not use set_final_response decorator
-def check_if_user_exists(user_id, request_id):
+def check_if_user_exists(user_id, request_id, errors_code_map):
     logger.info(f"{request_id} - checking if user_id '{user_id}' exists our database...")
     get_user_token = AuthManager.check_if_user_exists(user_id=user_id,
                                                       request_id=request_id)
 
     return get_user_token
-
 
 @ServerUtils.set_final_response
 def update_user_last_login(user_id, request_id, errors_code_map):
@@ -39,4 +38,18 @@ def update_user_last_login(user_id, request_id, errors_code_map):
         return {"flag": -1}
 
     logger.debug(f"{request_id} - user last login updated successfully")
+    return {"flag": 1}
+
+@ServerUtils.set_final_response
+def set_new_password(user_id, new_password, request_id, errors_code_map):
+    logger.info(f"{request_id} - updating user_id '{user_id}' password...")
+    updated = AuthManager.set_new_password(user_id=user_id,
+                                           new_password=new_password,
+                                           request_id=request_id)
+
+    if not updated["ok"]:
+        logger.critical(f"{request_id} - an error occurred while updating")
+        return {"flag": -1}
+
+    logger.debug(f"{request_id} - user password updated successfully")
     return {"flag": 1}

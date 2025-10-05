@@ -3,11 +3,11 @@ import datetime
 from repositories import ClassesRepository
 from configs import ClassesConfig
 
-def check_and_get_class_information(class_id, request_id, error_code_maps):
+def check_and_get_class_information(class_id, request_id, errors_code_map):
     exists_class = ClassesRepository.check_if_class_exists(
         class_id=class_id,
         request_id=request_id,
-        errors_code_map=error_code_maps
+        errors_code_map=errors_code_map
     )
 
     if exists_class["error"]:
@@ -16,7 +16,7 @@ def check_and_get_class_information(class_id, request_id, error_code_maps):
     class_information = ClassesRepository.get_class_information(
         class_id=class_id,
         request_id=request_id,
-        errors_code_map=error_code_maps
+        errors_code_map=errors_code_map
     )
 
     if class_information["error"]:
@@ -67,11 +67,8 @@ def get_user_classes_formatter(model, request_id):
     }
 
 def validate_date(date):
-    print(date)
     if not ClassesConfig.DATE_REGEX.match(date):
-        print("Date is not valid")
         return False
-    print("Date is valid")
 
     try:
         return datetime.datetime.strptime(date, "%Y-%m-%d")
