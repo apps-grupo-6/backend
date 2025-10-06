@@ -1,3 +1,4 @@
+from logging.handlers import RotatingFileHandler
 from pathlib import Path
 from psycopg2 import pool
 import configparser, logging, sib_api_v3_sdk
@@ -20,7 +21,6 @@ COLORS = {
 class ColorFormatter(logging.Formatter):
     def format(self, record):
         color = COLORS.get(record.levelname, RESET)
-        # aplico color a toda la línea ya formateada
         message = super().format(record)
         return f"{color}{message}{RESET}"
 
@@ -28,11 +28,24 @@ logger = logging.getLogger(__name__)
 if not logger.handlers:  # it's like a singleton, just for not creating unnecessary handlers
     logger.setLevel(logging.DEBUG)
     console_handler = logging.StreamHandler()
-    #formatter = logging.Formatter('[%(asctime)s] [%(filename)s] [%(lineno)d] [%(levelname)s] %(message)s')
-    formatter = ColorFormatter("[%(asctime)s] [%(filename)s] [%(lineno)d] [%(levelname)s] %(message)s")
+    log_structure = "[%(asctime)s] [%(filename)s] [%(lineno)d] [%(levelname)s] %(message)s"
+    formatter = ColorFormatter(log_structure)
     console_handler.setFormatter(formatter)
     logger.addHandler(console_handler)
 
+    LOG_DIR = BASE_DIR / "logs"
+    LOG_DIR.mkdir(exist_ok=True)
+    LOG_FILE = LOG_DIR / "app.log"
+
+    file_handler = RotatingFileHandler(
+        LOG_FILE,
+        maxBytes=100 * 1024 * 1024,  # 100 MB
+        backupCount=100,               # saves max 100 files
+        encoding="utf-8",
+    )
+    file_formatter = logging.Formatter(log_structure)
+    file_handler.setFormatter(file_formatter)
+    logger.addHandler(file_handler)
 try:
     logger.info("Connecting to database")
     connection_pool = pool.ThreadedConnectionPool(
