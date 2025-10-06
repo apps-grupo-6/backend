@@ -8,6 +8,8 @@ def create_location(model, user_id, request_id):
     city = model['city']
     address = model['address']
     name = model['name']
+    lat = model['lat']
+    lng = model['lng']
 
     exists_user = UsersRepository.check_if_user_exists(user_id=user_id,
                                                        request_id=request_id,
@@ -24,6 +26,8 @@ def create_location(model, user_id, request_id):
                                                   city=city,
                                                   address=address,
                                                   name=name,
+                                                  lat=lat,
+                                                  lng=lng,
                                                   request_id=request_id,
                                                   errors_code_map={"database_error_code": "0501"})
 

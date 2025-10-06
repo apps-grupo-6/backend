@@ -189,6 +189,8 @@ CREATE TABLE public.locations (
     address varchar(50) NOT NULL,
     created_at timestamp NOT NULL,
     updated_at timestamp,
+    lat float NOT NULL,
+    lng float NOT NULL,
     name varchar NOT NULL,
     CONSTRAINT fk_locations_owner
         FOREIGN KEY (owner_id) REFERENCES public.users (id)
@@ -410,10 +412,10 @@ COPY public.disciplines (id, name, intensity) FROM stdin;
 2	disciplina2	easy
 \.
 
-COPY public.locations (id, owner_id, country_code, city, address, created_at, updated_at, name) FROM stdin;
-1	14	AR	1	asd	2025-09-04 23:58:04.639361	\N	gym1
-2	14	AR	1	abc	2025-09-05 00:40:52.803678	\N	gym2
-4	15	AR	1	abc	2025-09-22 09:39:00.011519	\N	gym3
+COPY public.locations (id, owner_id, country_code, city, address, created_at, updated_at, lat, lng, name) FROM stdin;
+1	14	AR	1	asd	2025-09-04 23:58:04.639361	\N	-34.6175	-58.3808	gym1
+2	14	AR	1	abc	2025-09-05 00:40:52.803678	\N	-34.6190	-58.3823	gym2
+4	15	AR	1	abc	2025-09-22 09:39:00.011519	\N	-34.6160	-58.3792	gym3
 \.
 
 COPY public.classes (id, professor_id, location_id, discipline_id, scheduled_at, ended_at, max_participants, qr, status, created_at, updated_at) FROM stdin;

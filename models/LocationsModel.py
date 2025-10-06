@@ -7,3 +7,5 @@ class create_location(Schema):
     city = fields.String(required=True, validate=validate.Length(min=1, max=50))
     address = fields.String(required=True, validate=validate.Length(min=1, max=50))
     name = fields.String(required=True, validate=validate.Length(min=1, max=50))
+    lat = fields.Float(required=True, validate=validate.Range(min=-90.0, max=90.0))
+    lng = fields.Float(required=True, validate=validate.Range(min=-180.0, max=180.0))

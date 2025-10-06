@@ -19,7 +19,7 @@ def check_if_location_exists(location_id, request_id, errors_code_map):
     return {"flag": 1, "data": location_exists['data']}
 
 @ServerUtils.set_final_response
-def create_location(owner_id, country_code, city, address, name, request_id, errors_code_map):
+def create_location(owner_id, country_code, city, address, name, lat, lng, request_id, errors_code_map):
     logger.info(f"{request_id} - creating new location...")
 
     created = LocationsManager.create_location(owner_id=owner_id,
@@ -27,6 +27,8 @@ def create_location(owner_id, country_code, city, address, name, request_id, err
                                                city=city,
                                                address=address,
                                                name=name,
+                                               lat=lat,
+                                               lng=lng,
                                                request_id=request_id)
 
     if not created["ok"]:
