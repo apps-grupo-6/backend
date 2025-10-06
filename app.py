@@ -119,7 +119,7 @@ def awake_crons():
         function()
 
         logger.debug(f"Programming cron: {cron} to execute each {actual_cron['minutes']} minutes...")
-        #scheduler.add_job(function, "interval", minutes=actual_cron["minutes"])
+        scheduler.add_job(function, "interval", minutes=actual_cron["minutes"])
 
     scheduler.start()
     logger.info(f"Awaken {len(crons)} crons")
