@@ -7,7 +7,7 @@
 - Each request is stored in a ```requests``` table in the database for metrics and tracing.
 This could be improved by integrating Kafka, Grafana, or Prometheus, but due to time constraints, I chose to insert the records directly.
 
-# Español
+## Español
 - Validación de sesión mediante JWT, caché y verificaciones de control relacionadas con si un usuario fue baneado o marcado como sospechoso.
 - Lineamientos de diseño que permiten que la plataforma sea escalable y fácilmente mantenible.
 - Envío automático de alertas por correo electrónico a todos los usuarios con el rol "BACKEND DEVELOPER" cuando ocurre algo inusual.
@@ -17,13 +17,17 @@ Esto podría mejorarse integrando Kafka, Grafana o Prometheus, pero por cuestion
 
 # Usage / Uso
 ## English
-First of all, the repository must be cloned and accessed
+#### 1) First of all, the repository must be cloned and accessed
 ```bash
     git clone https://github.com/apps-grupo-6/backend.git
     cd backend
 ```
 
-After that, the project can be started using any of the following options:
+#### 2) Then, you need to create a ```.env ``` file inside the ```/properties``` directory using the provided ```example.env``` as a base.
+   
+   **Note:** This ```example.env``` file already includes the database configuration defined in the ```docker-compose.yml```, but you still need to fill in the missing values related to emails and JWT.
+
+#### 3) Finally, the project can be started using any of the following options:
 - Using the PowerShell helper tool:
 ```PowerShell
    .\run.ps1
@@ -40,14 +44,18 @@ After that, the project can be started using any of the following options:
     docker logs -f --tail 20 backend
 ```
 
-# Español
-Primero deberá clonarse el repositorio y acceder a su contenido
+## Español
+### 1) Primero deberá clonarse el repositorio y acceder a su contenido
 ```bash
     git clone https://github.com/apps-grupo-6/backend.git
     cd backend
 ```
 
-Luego, utilizando la consola, deberá iniciar el proyecto mediante alguna de las siguientes opciones:
+### 2) Luego, tendrá que crear un  ```.env ``` dentro de ```/properties``` utilizando como base el  ```example.env```.
+   
+   **Nota:** este  ```example.env``` ya tiene configurado la base de datos con lo que se define dentro del  ```docker-compose.yml```, pero falta lo relacionado con los mails y jwt. 
+
+### 3) Por último, utilizando la consola, deberá iniciar el proyecto mediante alguna de las siguientes opciones:
 
 - Utilizando nuestra herramienta mediante PowerShell:
 ```PowerShell
@@ -67,7 +75,7 @@ Luego, utilizando la consola, deberá iniciar el proyecto mediante alguna de las
 
 # Useful information / Información útil
 ## English
-If for any reason the database needs to be restored, it can be done by using:
+#### 1) If for any reason the database needs to be restored, it can be done by using:
 
 ```bash
     docker compose down -v 
@@ -75,10 +83,16 @@ If for any reason the database needs to be restored, it can be done by using:
 Then, the project should be started again.
 If any modifications were made, it is recommended to check that the ```.initdb``` folder contains only the two initial files.
 
+#### 2) If you need to check how the database is related:
+[View the database structure on GitHub](https://github.com/apps-grupo-6/documentation/tree/desarrollo/database)
+
 ## Español
-Si por algún motivo se necesita restaurar la base de datos, puede hacerse utilizando:
+#### 1) Si por algún motivo se necesita restaurar la base de datos, puede hacerse utilizando:
 
 ```bash
     docker compose down -v 
 ```
 Y luego iniciar el proyecto nuevamente. En caso de haber modificado algo, revisar si en la carpeta ```.initdb``` solo están los 2 archivos iniciales.
+
+#### 2) Si necesitas revisar cómo está relacionada la base de datos:
+[Ver estructura desde GitHub](https://github.com/apps-grupo-6/documentation/tree/desarrollo/database)
