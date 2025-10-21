@@ -76,6 +76,8 @@ try:
 except:
     logger.exception("Email api connection failed")
 
+LOCALHOST_ORIGINS_REGEX = r"^http://(localhost|127\.0\.0\.1)(:\d+)?$"
+
 run_check = [
     f"auth={config.get('Auth', 'enabled')}",
     f"users={config.get('Users', 'enabled')}",

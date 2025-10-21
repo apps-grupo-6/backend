@@ -1,7 +1,11 @@
+import re
+
 from flask import Flask, g, jsonify, request
+from flask_cors import CORS
 from datetime import datetime
 from apscheduler.schedulers.background import BackgroundScheduler
 
+from configs import ServerConfig
 from configs.ServerConfig import run_check, logger, special_errors_code_map
 from controllers import AuthController, UsersController, OtpController, ClassesController, LocationsController
 from connectors import ServerConnector
@@ -32,6 +36,13 @@ def before_request():
     g.endpoint = ""
     g.method = ""
     g.endpoint_id_list = []
+    client_ip = request.remote_addr
+    client_port = request.environ.get("REMOTE_PORT")
+    origin = request.headers.get("Origin")
+    referer = request.headers.get("Referer")
+
+    logger.info(f"{g.request_id} - connection from {client_ip}:{client_port}")
+    logger.info(f"{g.request_id} - Origin: {origin} - Referer: {referer}")
 
     logger.info(f"{g.request_id} - begin")
     if request.method in ['POST', 'PUT'] and request.is_json:
@@ -102,11 +113,27 @@ def internal_error(error):
 def internal_error(error):
     return {"error": "request body is empty"}, 415
 
+def build_cors_resources(app):
+    logger.info("building CORS resources...")
+    origin = re.compile(ServerConfig.LOCALHOST_ORIGINS_REGEX)
+    resources = {}
+
+    for rule in app.url_map.iter_rules():
+        if rule.rule.startswith("/api/"):
+            methods = sorted(m for m in (rule.methods or set()) if m !="HEAD")
+            resources[rule.rule] = {
+                "origins": origin,
+                "methods": methods,
+                "allow_headers": ["Content-Type", "Authorization"]
+            }
+
+    return resources
+
 def awake_crons():
     crons = {
         "get_users": {
             "function": ServerUtils.get_users,
-            "minutes": 1
+            "minutes": 30
         }
     }
     scheduler = BackgroundScheduler()
@@ -133,6 +160,7 @@ for check in run_check:
         bp = CONTROLLERS_BP[controller_name]
         app.register_blueprint(bp, url_prefix=f"/api/{controller_name}")
 
+CORS(app, resources=build_cors_resources(app))
 awake_crons()
 
 if __name__ == "__main__":

@@ -6,3 +6,4 @@ PyJWT==2.10.1
 APScheduler==3.11.0
 gunicorn==23.0.0
 sib_api_v3_sdk==7.6.0
+flask_cors==6.0.1
