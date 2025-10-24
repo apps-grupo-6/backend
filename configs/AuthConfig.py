@@ -19,7 +19,8 @@ login_code_map = {
 login_otp_code_map = {
     "0200": ("ok", 200),
     "0400": ("bad request", 400),
-    "0404": ("invalid otp_token", 404),
+    "0404": ("invalid username", 404),
+    "0405": ("invalid otp_token", 404),
     "0410": ("otp_token expired", 400),
     "0411": ("the user did not confirm his account yet", 400),
     "0500": ("the request could not be processed", 500),
