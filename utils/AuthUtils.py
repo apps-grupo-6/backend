@@ -29,6 +29,7 @@ def validate_session(func):
             logger.info(f"{g.request_id} - checking if user is cached...")
             str_user_id = str(user_id)
             if not str_user_id in ServerUtils.USERS_DATA["data"]: # maybe user registered between retrieving users cron execution
+                logger.info(f"{g.request_id} - checking if user_id '{user_id}' exists our database...")
                 exists = AuthRepository.check_if_user_exists(user_id=user_id, request_id=g.request_id)
 
                 if not exists["ok"]:

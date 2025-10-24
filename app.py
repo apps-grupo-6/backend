@@ -12,7 +12,7 @@ from connectors import ServerConnector
 from repositories import ServerRepository
 from utils import ServerUtils
 
-app = Flask(__name__)
+app = Flask(__name__, static_folder=None)
 app.url_map.strict_slashes = False
 
 CONTROLLERS_BP = {
@@ -42,7 +42,7 @@ def before_request():
     referer = request.headers.get("Referer")
 
     logger.info(f"{g.request_id} - connection from {client_ip}:{client_port}")
-    logger.info(f"{g.request_id} - Origin: {origin} - Referer: {referer}")
+    logger.info(f"{g.request_id} - origin: {origin} - referer: {referer}")
 
     logger.info(f"{g.request_id} - begin")
     if request.method in ['POST', 'PUT'] and request.is_json:
@@ -52,6 +52,8 @@ def before_request():
 
 @app.after_request
 def after_request(response):
+    description = ""
+
     if g.send_email_data:
         ServerConnector.send_email(email=g.send_email_data, request_id=g.request_id)
 
@@ -86,7 +88,7 @@ def after_request(response):
                 original_data["description"] = description
                 response.status_code = status_code
 
-        response.set_data(jsonify(original_data).get_data())
+            response.set_data(jsonify(original_data).get_data())
 
     g.end_time = datetime.now() - g.begin_time
     end_time_seconds = g.end_time.total_seconds()
@@ -98,6 +100,7 @@ def after_request(response):
                                         user_id=g.user_id,
                                         execution_time=end_time_seconds)
 
+    logger.debug(f"{g.request_id};{g.user_id};{g.method};{g.endpoint};{g.response_code};{description}")
     logger.info(f"{g.request_id} - ended after {end_time_seconds} seconds")
     return response
 
@@ -120,12 +123,15 @@ def build_cors_resources(app):
 
     for rule in app.url_map.iter_rules():
         if rule.rule.startswith("/api/"):
-            methods = sorted(m for m in (rule.methods or set()) if m !="HEAD")
-            resources[rule.rule] = {
-                "origins": origin,
-                "methods": methods,
-                "allow_headers": ["Content-Type", "Authorization"]
-            }
+            if rule.rule not in resources:
+                resources[rule.rule] = {
+                    "origins": origin,
+                    "methods": rule.methods,
+                    "allow_headers": ["Content-Type", "Authorization"]
+                }
+            else:
+                if rule.methods not in resources[rule.rule]["methods"]:
+                    resources[rule.rule]["methods"].update(rule.methods)
 
     return resources
 
