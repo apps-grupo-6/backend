@@ -1,3 +1,4 @@
+import json
 import re
 
 from flask import Flask, g, jsonify, request
@@ -69,6 +70,7 @@ def after_request(response):
         ServerUtils.send_email_alert_backend() # notifies backend developers to check this alert
 
     if response.content_type == 'application/json':
+        response.direct_passthrough = False
         original_data = response.get_json()
         original_data["request_id"] = g.request_id
 
@@ -88,7 +90,11 @@ def after_request(response):
                 original_data["description"] = description
                 response.status_code = status_code
 
-            response.set_data(jsonify(original_data).get_data())
+            payload = json.dumps(original_data, ensure_ascii=False)
+            response.set_data(payload)
+
+            if 'Content-Length' in response.headers:
+                del response.headers['Content-Length']
 
     g.end_time = datetime.now() - g.begin_time
     end_time_seconds = g.end_time.total_seconds()
