@@ -1,5 +1,6 @@
 from flask import g
 
+from configs.ServerConfig import logger
 from repositories import OtpRepository, UsersRepository
 from utils import OtpUtils, UsersUtils
 
@@ -64,7 +65,9 @@ def resend_otp(model, request_id):
     if checked["error"]: # if user already has an active otp_token with this type, it throws an error
         if checked["ok"]: # it's just to check if it wasn't a database error
             # so, if user has an active otp_token we just resend it
-            OtpUtils.generate_otp_mail(otp_token=checked["data"]["otp_token"],
+            otp_token = checked["data"]["otp_token"]
+            logger.debug(f"{request_id} - found user otp_token with this type: {otp_token}")
+            OtpUtils.generate_otp_mail(otp_token=otp_token,
                                        user_contact=user_contact,
                                        type=type)
 

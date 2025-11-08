@@ -20,6 +20,7 @@ def send_email(email, request_id):
     )
 
     try:
+        logger.info(f"{request_id} - sending email...")
         contact_api.create_contact(contact)
         logger.debug(f"{request_id} - {user_email} added or updated.")
     except ApiException as e:

@@ -27,15 +27,15 @@ def login(model, request_id):
     user_id = get_user_info['data']['user_id']
     g.user_id = user_id
 
-    if not get_user_info['data']['email_verified']:
-        logger.error(f"{request_id} - user's account is not verified")
-        g.response_code = "0411"
-        return {}
-
     logger.info(f"{request_id} - checking password...")
     if not UsersUtils.verify_password(plain_password=password, hashed_password=get_user_info["data"]["password"]):
         logger.error(f"{request_id} - the password is incorrect")
         g.response_code = "0410"
+        return {}
+
+    if not get_user_info['data']['email_verified']:
+        logger.error(f"{request_id} - user's account is not verified")
+        g.response_code = "0411"
         return {}
 
     user_contact = UsersRepository.get_user_contact_information(user_id=user_id,
