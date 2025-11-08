@@ -136,8 +136,10 @@ def build_cors_resources(app):
                     "allow_headers": ["Content-Type", "Authorization"]
                 }
             else:
-                if rule.methods not in resources[rule.rule]["methods"]:
-                    resources[rule.rule]["methods"].update(rule.methods)
+                resources[rule.rule]["methods"].update(rule.methods)
+
+    for rule, cfg in resources.items():
+        cfg["methods"] = list(cfg["methods"])
 
     return resources
 

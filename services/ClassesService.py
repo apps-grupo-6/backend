@@ -242,7 +242,7 @@ def add_class_participant(class_id, user_id, request_id):
     if class_information["error"]:
         return {}
 
-    if class_information["data"] and datetime.datetime.fromisoformat(class_information["data"]["scheduled_at"]) <= datetime.datetime.now():
+    if class_information["data"] and datetime.datetime.fromisoformat(class_information["data"]["class_scheduled_at"]) <= datetime.datetime.now():
         logger.error(f"{request_id} - the class already started")
         g.response_code = "0410"
         return {}
