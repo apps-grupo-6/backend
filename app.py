@@ -174,7 +174,16 @@ for check in run_check:
         bp = CONTROLLERS_BP[controller_name]
         app.register_blueprint(bp, url_prefix=f"/api/{controller_name}")
 
-CORS(app, resources=build_cors_resources(app))
+#CORS(app, resources=build_cors_resources(app))
+CORS(app,
+     resources={r"/api/*": {
+         "origins": "*",
+         "methods": ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+         "allow_headers": ["Content-Type", "Authorization"],
+         "expose_headers": ["Content-Type", "Authorization"],
+         "supports_credentials": True
+     }},
+     supports_credentials=True)
 awake_crons()
 
 if __name__ == "__main__":
