@@ -37,7 +37,7 @@ def get_user_contact_information(user_id, request_id, errors_code_map):
 
 @ServerUtils.set_final_response
 def register_user(username, hashed_password, first_name, last_name, telephone,
-                  contact_email, verification_token, verification_expires_at, request_id, errors_code_map):
+                  contact_email, request_id, errors_code_map):
 
     logger.info(f"{request_id} - trying to register username '{username}' with verification...")
     registered = UsersManager.register_account(username=username,
@@ -46,8 +46,6 @@ def register_user(username, hashed_password, first_name, last_name, telephone,
                                                last_name=last_name,
                                                telephone=telephone,
                                                email=contact_email,
-                                               verification_token=verification_token,
-                                               verification_expires_at=verification_expires_at,
                                                request_id=request_id)
 
     if not registered["ok"]:
@@ -108,7 +106,7 @@ def get_user_by_verification_code(username, verification_code, request_id, error
 @ServerUtils.set_final_response
 def mark_user_as_verified(user_id, request_id, errors_code_map):
     logger.info(f"{request_id} - marking user_id '{user_id}' as verified...")
-    verified = OtpManager.mark_user_as_verified(user_id=user_id, request_id=request_id)
+    verified = UsersManager.mark_user_as_verified(user_id=user_id, request_id=request_id)
 
     if not verified["ok"]:
         logger.critical(f"{request_id} - an error occurred while marking as verified")
@@ -159,8 +157,8 @@ def check_user_verification_status_by_user_id(user_id, request_id, errors_code_m
         logger.critical(f"{request_id} - an error occurred while checking verification status")
         return {"flag": -1}
 
-    if user_status["data"] and not user_status["data"]["verified"]:
-        logger.error(f"{request_id} - user did not confirm his account")
+    if user_status["data"] and user_status["data"]["verified"]:
+        logger.error(f"{request_id} - this user already confirmed his account")
         return {"flag": 0}
 
     logger.debug(f"{request_id} - user verification status retrieved successfully")

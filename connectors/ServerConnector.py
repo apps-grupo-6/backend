@@ -1,4 +1,4 @@
-import sib_api_v3_sdk
+import sib_api_v3_sdk, requests
 from configs.ServerConfig import logger, email_configuration, SENDER_EMAIL, SENDER_NAME
 from sib_api_v3_sdk.rest import ApiException
 from sib_api_v3_sdk import CreateContact, SendSmtpEmail
@@ -43,3 +43,17 @@ def send_email(email, request_id):
         logger.debug(f"{request_id} - email sent to '{user_email}'. ID: '{response.message_id}'")
     except ApiException:
         logger.exception(f"{request_id} - an error occurred while trying to sending email")
+
+def send_push_notification(expo_push_token, title, body, request_id):
+    message = {
+        "to": expo_push_token,
+        "sound": "default",
+        "title": title,
+        "body": body,
+        "data": {},
+    }
+
+    try:
+        requests.post("https://exp.host/--/api/v2/push/send", json=message, timeout=5)
+    except:
+        logger.exception(f"{request_id} - an error occurred while trying to sending push notification")

@@ -80,19 +80,26 @@ def update_class(id):
     logger.info(f"{g.request_id} - finished mandatory fields check")
     return ClassesService.update_class(model=model, class_id=id, user_id=g.user_id, request_id=g.request_id)
 
-@bp.put("/<int:id>/finish")
-@ServerUtils.configure_request(description_code_map=ClassesConfig.finish_class_code_map, method="PUT", endpoint="<id>/finish")
+@bp.delete("/<int:id>")
+@ServerUtils.configure_request(description_code_map=ClassesConfig.finish_class_code_map, method="DELETE", endpoint="<id>")
 @AuthUtils.validate_session
 def finish_class(id):
     logger.info(f"{g.request_id} - starting finish_class")
     return ClassesService.finish_class(class_id=id, user_id=g.user_id, request_id=g.request_id)
 
-@bp.post("/<int:id>/participant")
-@ServerUtils.configure_request(description_code_map=ClassesConfig.add_class_participant_code_map, method="POST", endpoint="<id>/participant")
+@bp.post("/<int:id>/start")
+@ServerUtils.configure_request(description_code_map=ClassesConfig.start_class_code_map, method="POST", endpoint="<id>/start")
 @AuthUtils.validate_session
-def add_class_participant(id):
-    logger.info(f"{g.request_id} - starting add_class_participant")
-    return ClassesService.add_class_participant(class_id=id, user_id=g.user_id, request_id=g.request_id)
+def start_class(id):
+    logger.info(f"{g.request_id} - starting start_class")
+    return ClassesService.start_class(class_id=id, user_id=g.user_id, request_id=g.request_id)
+
+@bp.post("/<int:id>/participant")
+@ServerUtils.configure_request(description_code_map=ClassesConfig.add_participant_code_map, method="POST", endpoint="<id>/participant")
+@AuthUtils.validate_session
+def add_participant(id):
+    logger.info(f"{g.request_id} - starting add_participant")
+    return ClassesService.add_participant(class_id=id, user_id=g.user_id, request_id=g.request_id)
 
 @bp.delete("/<int:id>/participant")
 @ServerUtils.configure_request(description_code_map=ClassesConfig.cancel_participant_code_map, method="DELETE", endpoint="<id>/participant")
@@ -101,8 +108,8 @@ def cancel_participant(id):
     logger.info(f"{g.request_id} - starting cancel_participant")
     return ClassesService.cancel_participant(class_id=id, user_id=g.user_id, request_id=g.request_id)
 
-@bp.put("/<int:id>/participant/confirm")
-@ServerUtils.configure_request(description_code_map=ClassesConfig.confirm_participant_code_map, method="PUT", endpoint="<id>/participant/confirm")
+@bp.post("/<int:id>/participant/confirm")
+@ServerUtils.configure_request(description_code_map=ClassesConfig.confirm_participant_code_map, method="POST", endpoint="<id>/participant/confirm")
 @AuthUtils.validate_session
 def confirm_participant(id):
     logger.info(f"{g.request_id} - starting confirm_participant")

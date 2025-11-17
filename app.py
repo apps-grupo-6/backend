@@ -7,8 +7,8 @@ from datetime import datetime
 from apscheduler.schedulers.background import BackgroundScheduler
 
 from configs import ServerConfig
-from configs.ServerConfig import run_check, logger, special_errors_code_map
-from controllers import AuthController, UsersController, OtpController, ClassesController, LocationsController
+from configs.ServerConfig import enabled, logger, special_errors_code_map
+from controllers import AuthController, UsersController, OtpController, ClassesController, LocationsController, NotificationsController
 from connectors import ServerConnector
 from repositories import ServerRepository
 from utils import ServerUtils
@@ -21,11 +21,15 @@ CONTROLLERS_BP = {
     "users": UsersController.bp,
     "otp": OtpController.bp,
     "classes": ClassesController.bp,
-    "locations": LocationsController.bp
+    "locations": LocationsController.bp,
+    "notifications": NotificationsController.bp,
 }
 
 @app.before_request
 def before_request():
+    if request.method == "OPTIONS":
+        return
+
     g.request_id = datetime.now().strftime("%Y%m%d%H%M%S%f")
     g.send_email_data = {}
     g.alert_description = ""
@@ -37,15 +41,18 @@ def before_request():
     g.endpoint = ""
     g.method = ""
     g.endpoint_id_list = []
+    g.send_push_notification_data = {}
+    g.send_push_notification_users_token = []
+
     client_ip = request.remote_addr
     client_port = request.environ.get("REMOTE_PORT")
     origin = request.headers.get("Origin")
     referer = request.headers.get("Referer")
 
+    logger.info(f"{g.request_id} - begin")
     logger.info(f"{g.request_id} - connection from {client_ip}:{client_port}")
     logger.info(f"{g.request_id} - origin: {origin} - referer: {referer}")
 
-    logger.info(f"{g.request_id} - begin")
     if request.method in ['POST', 'PUT'] and request.is_json:
         logger.info(f"{g.request_id} - request body: {request.json}")
     else:
@@ -53,6 +60,9 @@ def before_request():
 
 @app.after_request
 def after_request(response):
+    if request.method == "OPTIONS":
+        return response
+
     description = ""
 
     if g.send_email_data:
@@ -68,6 +78,16 @@ def after_request(response):
 
         ServerUtils.get_users() # forces to reload users cache to update user status if banned o flagged as suspect
         ServerUtils.send_email_alert_backend() # notifies backend developers to check this alert
+
+    if g.send_push_notification_data and g.send_push_notification_users_token:
+        length = len(g.send_push_notification_users_token)
+
+        for counter, token in enumerate(g.send_push_notification_users_token, start=1):
+            logger.debug(f"sending push notification {counter}/{length}")
+            ServerConnector.send_push_notification(expo_push_token=token,
+                                                   title=g.send_push_notification_data["title"],
+                                                   body=g.send_push_notification_data["body"],
+                                                   request_id=g.request_id)
 
     if response.content_type == 'application/json':
         response.direct_passthrough = False
@@ -148,6 +168,10 @@ def awake_crons():
         "get_users": {
             "function": ServerUtils.get_users,
             "minutes": 30
+        },
+        "delete_expired_otp_tokens": {
+            "function": ServerRepository.delete_expired_otp_tokens,
+            "minutes": 20
         }
     }
     scheduler = BackgroundScheduler()
@@ -156,7 +180,7 @@ def awake_crons():
         actual_cron = crons[cron]
         function = actual_cron["function"]
 
-        logger.debug(f"Executing required cron '{cron}' to retrieve its data...")
+        logger.info(f"Executing required cron '{cron}'...")
         function()
 
         logger.debug(f"Programming cron: {cron} to execute each {actual_cron['minutes']} minutes...")
@@ -166,7 +190,7 @@ def awake_crons():
     logger.info(f"Awaken {len(crons)} crons")
 
 
-for check in run_check:
+for check in enabled:
     controller_name, controller_enabled = check.split("=")
 
     if controller_enabled == "1":
@@ -184,6 +208,7 @@ CORS(app,
          "supports_credentials": True
      }},
      supports_credentials=True)
+
 awake_crons()
 
 if __name__ == "__main__":

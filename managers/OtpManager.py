@@ -44,18 +44,17 @@ def save_otp(final_response, conn, cursor, user_id, otp_token, type, request_id)
     return final_response
 
 @DatabaseUtils.with_db_connection
-def delete_otp(final_response, conn, cursor, user_id, otp_token, type, request_id):
+def delete_otp(final_response, conn, cursor, otp_token_id, request_id):
     try:
         query = """
             DELETE FROM otp_tokens
             WHERE 
-                user_id = %s 
-                AND token = %s
-                AND type = %s
+                id = %s
         """
-        values = (user_id, otp_token, type)
+        values = (otp_token_id,)
 
         cursor.execute(query, values)
+        final_response["data"] = cursor.rowcount
         conn.commit()
     except:
         logger.exception(f"{request_id} - an error occurred while deleting the otp_token")
@@ -98,27 +97,8 @@ def get_user_by_verification_code(final_response, conn, cursor, username, verifi
         """
         cursor.execute(query, (username, verification_code))
         final_response["data"] = cursor.fetchone()
-    except Exception as e:
-        logger.exception(f"{request_id} - an error occurred while getting user by verification code: {e}")
-        final_response["ok"] = False
-
-    return final_response
-
-@DatabaseUtils.with_db_connection
-def mark_user_as_verified(final_response, conn, cursor, user_id, request_id):
-    try:
-        query = """
-            UPDATE user_controls 
-            SET email_verified = TRUE,
-                email_verified_at = NOW()
-            WHERE user_id = %s
-        """
-        values = (user_id,)
-
-        cursor.execute(query, values)
-        conn.commit()
-    except Exception as e:
-        logger.exception(f"{request_id} - an error occurred while marking user as verified: {e}")
+    except:
+        logger.exception(f"{request_id} - an error occurred while getting user by verification code")
         final_response["ok"] = False
 
     return final_response
@@ -127,7 +107,7 @@ def mark_user_as_verified(final_response, conn, cursor, user_id, request_id):
 def check_otp_token_by_user_id(final_response, conn, cursor, user_id, otp_token, type, request_id):
     try:
         query = """
-            SELECT expires_at
+            SELECT id, expires_at
             FROM otp_tokens ot
             WHERE 
                 ot.user_id = %s

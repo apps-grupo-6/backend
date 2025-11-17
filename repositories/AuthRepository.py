@@ -4,18 +4,18 @@ from utils import ServerUtils
 
 @ServerUtils.set_final_response
 def get_username_info(username, request_id, errors_code_map):
-    logger.info(f"{request_id} - obtaining '{username}' account information...")
+    logger.info(f"{request_id} - retrieving '{username}' account information...")
     get_user_info = AuthManager.get_username_info(username=username, request_id=request_id)
 
     if not get_user_info["ok"]:
-        logger.critical(f"{request_id} - an error occurred while obtaining user information")
+        logger.critical(f"{request_id} - an error occurred while retrieving user information")
         return {"flag": -1}
 
     if not get_user_info["data"]:
         logger.error(f"{request_id} - invalid username")
         return {"flag": 0}
 
-    logger.debug(f"{request_id} - username exists")
+    logger.debug(f"{request_id} - username account exists")
     return {"flag": 1, "data": get_user_info['data']}
 
 

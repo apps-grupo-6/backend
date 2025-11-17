@@ -33,7 +33,7 @@ get_all_classes_code_map = {
 create_class_code_map = {
     "0200": ("ok", 200),
     "0400": ("bad request", 400),
-    "0404": ("invalid user_id", 404),
+    "0404": ("invalid professor_id", 404),
     "0405": ("invalid location_id", 404),
     "0406": ("invalid discipline_id", 404),
     "0410": ("there is an existent class with this data", 400),
@@ -86,7 +86,7 @@ finish_class_code_map = {
     "0503": ("the request could not be processed", 500)
 }
 
-add_class_participant_code_map = {
+add_participant_code_map = {
     "0200": ("ok", 200),
     "0404": ("invalid class_id", 404),
     "0405": ("the requested user is not a participant in this class", 404),
@@ -122,4 +122,13 @@ get_user_classes_history_code_map = {
     "0200": ("ok", 200),
     "0400": ("bad request", 400),
     "0500": ("the request could not be processed", 500)
+}
+
+start_class_code_map = {
+    "0200": ("ok", 200),
+    "0400": ("bad request", 400),
+    "0404": ("invalid class_id", 404),
+    "0410": ("the requested class is already finished", 400),
+    "0500": ("the request could not be processed", 500),
+    "0501": ("the request could not be processed", 500)
 }

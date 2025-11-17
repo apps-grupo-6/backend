@@ -231,7 +231,7 @@ def finish_class(class_id, user_id, request_id):
     g.response_code = "0200"
     return {}
 
-def add_class_participant(class_id, user_id, request_id):
+def add_participant(class_id, user_id, request_id):
     class_information = ClassesUtils.check_and_get_class_information(class_id=class_id,
                                                                      request_id=request_id,
                                                                      errors_code_map={
@@ -247,7 +247,7 @@ def add_class_participant(class_id, user_id, request_id):
         g.response_code = "0410"
         return {}
 
-    exists_participant = ClassesRepository.check_if_user_doesnt_participant(class_id=class_id,
+    exists_participant = ClassesRepository.check_if_user_doesnt_participate(class_id=class_id,
                                                                             user_id=user_id,
                                                                             request_id=request_id,
                                                                             errors_code_map={
@@ -399,3 +399,35 @@ def get_user_classes_history(user_id, since, until, request_id):
     return {
         "data": history['data']
     }
+
+def start_class(class_id, user_id, request_id):
+    class_information = ClassesUtils.check_and_get_class_information(class_id=class_id,
+                                                                     request_id=request_id,
+                                                                     errors_code_map={
+                                                                         "database_error_code": "0500",
+                                                                         "invalid_data_error_code": "0404"
+                                                                     })
+
+    if class_information["error"]:
+        return {}
+
+    professor_id = class_information["data"]["professor_id"]
+    if not professor_id == user_id:
+        g.alert_description = f"user_id '{user_id}' tried to finish class_id '{class_id}' which professor_id is '{professor_id}'"
+        logger.critical(f"{request_id} - [SECURITY BREACH] {g.alert_description}")
+        g.response_code = "9999"
+        return {}
+
+    if class_information["data"]["ended_at"]:
+        logger.error(f"{request_id} - class already finished")
+        g.response_code = "0410"
+        return {}
+
+    ClassesRepository.start_class(class_id=class_id,
+                                  request_id=request_id,
+                                  errors_code_map={
+                                      "database_error_code": "0501",
+                                  })
+
+    g.response_code = "0200"
+    return {}

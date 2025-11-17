@@ -1,4 +1,4 @@
-import jwt
+import jwt, datetime
 from flask import request, g
 from functools import wraps
 
@@ -60,7 +60,7 @@ def validate_session(func):
             if user_data["suspect"]: #if user was flagged as suspect
                 logger.warning(f"{g.request_id} - user_id '{user_id}' was flagged as suspect")
 
-            if user_id not in ServerUtils.BACKEND_DEVELOPERS:
+            if str_user_id not in ServerUtils.BACKEND_DEVELOPERS:
                 user_permissions = user_data["permissions"]
                 check_endpoint = f"{g.method}-{g.endpoint}"
 
@@ -116,3 +116,14 @@ def check_jwt_token(jwt_token):
         final_response["error_code"] = 1
 
     return final_response
+
+def generate_jwt_token(user_id, request_id):
+    logger.info(f"{request_id} - generating jwt token...")
+    payload = {
+        "exp": datetime.datetime.utcnow() + datetime.timedelta(seconds=AuthConfig.jwt_exp_delta_seconds),
+        "user_id": user_id
+    }
+
+    token = jwt.encode(payload, AuthConfig.jwt_secret, algorithm=AuthConfig.jwt_algorithm)
+    logger.debug(f"{request_id} - jwt token generated successfully")
+    return token

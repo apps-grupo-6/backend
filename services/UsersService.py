@@ -2,8 +2,7 @@ from flask import g
 from configs.ServerConfig import logger
 
 from repositories import UsersRepository
-from utils import UsersUtils, OtpUtils
-from templates import OtpTemplate
+from utils import UsersUtils
 
 def register_account(model, request_id):
     username = model["username"]
@@ -12,8 +11,6 @@ def register_account(model, request_id):
     last_name = model["last_name"]
     telephone = model["telephone"]
     contact_email = model["contact_email"]
-    hashed_password = UsersUtils.hash_password(password)
-    TYPE = "REGISTRATION"
 
     exists_user = UsersRepository.check_if_username_doesnt_exist(username=username,
                                                                  request_id=request_id,
@@ -24,18 +21,13 @@ def register_account(model, request_id):
     if exists_user["error"]:
         return {}
 
-    otp_token = OtpUtils.generate_otp(otp_type=TYPE, request_id=request_id)
-    verification_token = otp_token["otp_token"]
-    expires_at = otp_token["expires_at"]
-
+    hashed_password = UsersUtils.hash_password(password)
     registered = UsersRepository.register_user(username=username,
                                                hashed_password=hashed_password,
                                                first_name=first_name,
                                                last_name=last_name,
                                                telephone=telephone,
                                                contact_email=contact_email,
-                                               verification_token=verification_token,
-                                               verification_expires_at=expires_at,
                                                request_id=request_id,
                                                errors_code_map={"database_error_code": "0501"})
 
@@ -43,22 +35,8 @@ def register_account(model, request_id):
         return {}
 
     user_id = registered["data"]["user_id"]
-    logger.info(f"{request_id} - user registered with id: '{user_id}'")
     g.user_id = user_id
-
-    g.send_email_data = {
-        "subject": "Verifica tu cuenta - Código de activación",
-        "user_email": contact_email,
-        "user_firstname": first_name,
-        "user_lastname": last_name,
-        "html_content": OtpTemplate.render_registration_verification_email(first_name=first_name,
-                                                                           last_name=last_name,
-                                                                           username=username,
-                                                                           otp_code=verification_token)
-    }
-
-    logger.info(f"{request_id} - verification email sent")
-
+    logger.info(f"{request_id} - user registered with id: '{user_id}'")
     g.response_code = "0200"
     return {}
 

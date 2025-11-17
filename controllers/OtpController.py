@@ -12,7 +12,6 @@ bp = Blueprint('otp', __name__)
 
 @bp.post("/")
 @ServerUtils.configure_request(description_code_map=OtpConfig.create_otp_code_map, method="POST")
-@AuthUtils.validate_session
 def create_otp():
     try:
         logger.info(f"{g.request_id} - starting create_otp")
@@ -28,7 +27,7 @@ def create_otp():
         }
 
     logger.info(f"{g.request_id} - finished mandatory fields check")
-    return OtpServices.create_otp(model=model, user_id=g.user_id, request_id=g.request_id)
+    return OtpServices.create_otp(model=model, request_id=g.request_id)
 
 @bp.post("/resend")
 @ServerUtils.configure_request(description_code_map=OtpConfig.resend_otp_code_map, method="POST", endpoint="resend")
@@ -48,3 +47,29 @@ def resend_otp():
 
     logger.info(f"{g.request_id} - finished mandatory fields check")
     return OtpServices.resend_otp(model=model, request_id=g.request_id)
+
+@bp.post("/check")
+@ServerUtils.configure_request(description_code_map=OtpConfig.check_otp_code_map, method="POST", endpoint="check")
+def check_otp():
+    try:
+        logger.info(f"{g.request_id} - starting check_otp")
+        logger.info(f"{g.request_id} - starting mandatory fields check")
+
+        data = request.json
+        model = OtpModel.check_otp().load(data)
+    except ValidationError as e:
+        logger.exception(f"{g.request_id} - there are absent mandatory fields")
+        g.response_code = "0400"
+        return {
+            "detailed_description": e.messages
+        }
+
+    logger.info(f"{g.request_id} - finished mandatory fields check")
+    return OtpServices.check_otp(model=model, request_id=g.request_id)
+
+@bp.delete("/<int:id>")
+@ServerUtils.configure_request(description_code_map=OtpConfig.delete_otp_code_map, method="DELETE", endpoint="<id>")
+@AuthUtils.validate_session
+def delete_otp(id):
+    logger.info(f"{g.request_id} - starting delete_otp")
+    return OtpServices.delete_otp(otp_token_id=id, request_id=g.request_id)

@@ -45,3 +45,17 @@ def set_user_as_banned(user_id, request_id):
         logger.info(f"request data: {request_id=} | {user_id=}")
     else:
         logger.debug(f"{request_id} - user banned successfully")
+
+def delete_expired_otp_tokens():
+    logger.info("trying to delete all expired otp_tokens...")
+
+    deleted = ServerManager.delete_expired_otp_tokens()
+    if not deleted["ok"]:
+        logger.critical("an error occurred when trying to delete expired otp_tokens")
+    else:
+        rows_affected = deleted['data']
+
+        if rows_affected:
+            logger.debug(f"{rows_affected} otp_tokens were deleted successfully")
+        else:
+            logger.debug("all otp_tokens in our database are active")

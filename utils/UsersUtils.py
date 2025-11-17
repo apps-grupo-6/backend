@@ -36,8 +36,9 @@ def update_class_fields_formatter(model):
     error = False
 
     for key in model:
-        columns.append(f"{key} = %s")
-        values.append(model[key])
+        if model[key]:
+            columns.append(f"{key} = %s")
+            values.append(model[key])
 
     return {
         "error": error,

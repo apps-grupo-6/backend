@@ -3,12 +3,12 @@ from utils import DatabaseUtils
 
 @DatabaseUtils.with_db_connection
 def register_account(final_response, conn, cursor, username, password, first_name,
-                     last_name, telephone, email, verification_token, verification_expires_at, request_id):
+                     last_name, telephone, email, request_id):
     try:
         procedure_call = """
-            SELECT register_account(%s, %s, %s, %s, %s, %s, %s, %s)
+            SELECT register_account(%s, %s, %s, %s, %s, %s)
         """
-        values = (username, password, first_name, last_name, telephone, email, verification_token, verification_expires_at)
+        values = (username, password, first_name, last_name, telephone, email)
         
         cursor.execute(procedure_call, values)
         
@@ -169,6 +169,25 @@ def get_username_by_user_id(final_response, conn, cursor, user_id, request_id):
         final_response["data"] = cursor.fetchone()
     except Exception as e:
         logger.exception(f"{request_id} - an error occurred while getting username by user_id")
+        final_response["ok"] = False
+
+    return final_response
+
+@DatabaseUtils.with_db_connection
+def mark_user_as_verified(final_response, conn, cursor, user_id, request_id):
+    try:
+        query = """
+            UPDATE user_controls 
+            SET email_verified = TRUE,
+                email_verified_at = NOW()
+            WHERE user_id = %s
+        """
+        values = (user_id,)
+
+        cursor.execute(query, values)
+        conn.commit()
+    except:
+        logger.exception(f"{request_id} - an error occurred while marking user as verified")
         final_response["ok"] = False
 
     return final_response

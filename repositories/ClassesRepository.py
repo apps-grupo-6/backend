@@ -195,7 +195,7 @@ def confirm_participant(class_id, user_id, request_id, errors_code_map):
         logger.error(f"{request_id} - user's status cannot be changed to 'CONFIRMED'")
         return {"flag": 0}
 
-    logger.debug(f"{request_id} - participant cancelled successfully")
+    logger.debug(f"{request_id} - participant confirmed successfully")
     return {"flag": 1}
 
 @ServerUtils.set_final_response
@@ -217,7 +217,7 @@ def check_if_participant_exists(class_id, user_id, request_id, errors_code_map):
     return {"flag": 1}
 
 @ServerUtils.set_final_response
-def check_if_user_doesnt_participant(class_id, user_id, request_id, errors_code_map):
+def check_if_user_doesnt_participate(class_id, user_id, request_id, errors_code_map):
     logger.info(f"{request_id} - checking if user_id '{user_id}' participates in class_id '{class_id}'...")
     exists_participant = ClassesManager.does_participant_exist(class_id=class_id,
                                                                user_id=user_id,
@@ -248,3 +248,15 @@ def get_user_classes_history(user_id, columns, values, request_id, errors_code_m
 
     logger.debug(f"{request_id} - found {len(user_history['data'])} classes")
     return {"flag": 1, "data": user_history['data']}
+
+@ServerUtils.set_final_response
+def start_class(class_id, request_id, errors_code_map):
+    logger.info(f"{request_id} - starting class_id '{class_id}'...")
+    started_class = ClassesManager.start_class(class_id=class_id, request_id=request_id)
+
+    if not started_class["ok"]:
+        logger.critical(f"{request_id} - an error occurred while starting class")
+        return {"flag": -1}
+
+    logger.debug(f"{request_id} - class started successfully")
+    return {"flag": 1}

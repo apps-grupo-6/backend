@@ -196,6 +196,7 @@ def get_all_classes(final_response, conn, cursor, request_id):
             LEFT JOIN locations l ON c.location_id = l.id  
             LEFT JOIN disciplines d ON c.discipline_id = d.id
             LEFT JOIN class_participants cp on c.id = cp.class_id
+            WHERE c.scheduled_at >= NOW() + INTERVAL '1 hour'
             GROUP BY 
                 c.id, ui.first_name, ui.last_name,
                 c.location_id, l.city, l.address, l.name, d.name,
@@ -409,6 +410,7 @@ def get_user_classes_history(final_response, conn, cursor, user_id, columns, col
             JOIN locations l ON c.location_id = l.id
             WHERE
                 cp.user_id = %s
+                AND c.scheduled_at < NOW()
         """
 
         values = (user_id,)
@@ -421,6 +423,27 @@ def get_user_classes_history(final_response, conn, cursor, user_id, columns, col
         final_response["data"] = cursor.fetchall()
     except:
         logger.exception(f"{request_id} - an error occurred while trying to get user_id all classes history")
+        final_response["ok"] = False
+
+    return final_response
+
+@DatabaseUtils.with_db_connection
+def start_class(final_response, conn, cursor, class_id, request_id):
+    try:
+        query = """
+            UPDATE classes
+            SET 
+                started_at = NOW(),
+                updated_at = NOW(),
+                status = 'STARTED'
+            WHERE id = %s
+        """
+        values = (class_id,)
+
+        cursor.execute(query, values)
+        conn.commit()
+    except:
+        logger.exception(f"{request_id} - an error occurred while trying to start this class")
         final_response["ok"] = False
 
     return final_response

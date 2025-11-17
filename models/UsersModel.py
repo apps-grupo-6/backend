@@ -1,7 +1,7 @@
 from marshmallow import Schema, fields, validate
 
 class register_account(Schema):
-    username = fields.String(required=True, validate=validate.Length(min=1, max=50))
+    username = fields.String(required=True, validate=validate.Length(min=6, max=12))
     password = fields.String(required=True, validate=validate.Length(min=1, max=50))
     first_name = fields.String(required=True, validate=validate.Length(min=1, max=50))
     last_name = fields.String(required=True, validate=validate.Length(min=1, max=50))

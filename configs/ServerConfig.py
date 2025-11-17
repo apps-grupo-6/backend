@@ -51,11 +51,11 @@ try:
     connection_pool = pool.ThreadedConnectionPool(
         minconn=1,
         maxconn=10,
-        host=config.get("Database", "DB_HOST"),
-        user=config.get("Database", "DB_USER"),
-        password=config.get("Database", "DB_PASSWORD"),
-        database=config.get("Database", "DB_NAME"),
-        port=config.get("Database", "DB_PORT"),
+        host=config.get("database", "DB_HOST"),
+        user=config.get("database", "DB_USER"),
+        password=config.get("database", "DB_PASSWORD"),
+        database=config.get("database", "DB_NAME"),
+        port=config.get("database", "DB_PORT"),
         options='-c search_path=public'
     )
     logger.info("Database connection established")
@@ -67,9 +67,9 @@ except:
 try:
     logger.info("Connecting to email api")
 
-    API_KEY = config.get("Email", "api_key")
-    SENDER_NAME = config.get("Email", "sender_name")
-    SENDER_EMAIL = config.get("Email", "sender_email")
+    API_KEY = config.get("email", "api_key")
+    SENDER_NAME = config.get("email", "sender_name")
+    SENDER_EMAIL = config.get("email", "sender_email")
     email_configuration = sib_api_v3_sdk.Configuration()
     email_configuration.api_key['api-key'] = API_KEY
     logger.info("Email api connection established")
@@ -78,13 +78,22 @@ except:
 
 LOCALHOST_ORIGINS_REGEX = r"^http://(localhost|127\.0\.0\.1)(:\d+)?$"
 
-run_check = [
-    f"auth={config.get('Auth', 'enabled')}",
-    f"users={config.get('Users', 'enabled')}",
-    f"otp={config.get('Otp', 'enabled')}",
-    f"classes={config.get('Classes', 'enabled')}",
-    f"locations={config.get('Locations', 'enabled')}"
+config_keys = config.keys()
+
+enabled = [
+    f"{section}={config.get(section, 'enabled')}"
+    for section in config_keys
+    if config.has_option(section, 'enabled')
 ]
+
+#run_check = [
+#    f"auth={config.get('Auth', 'enabled')}",
+#    f"users={config.get('Users', 'enabled')}",
+#    f"otp={config.get('Otp', 'enabled')}",
+#    f"classes={config.get('Classes', 'enabled')}",
+#    f"locations={config.get('Locations', 'enabled')}",
+#    f"notifications={config.get('Notifications', 'enabled')}"
+#]
 
 # -1 = database error when trying to check if user exists in our database
 # 9998 = user is banned

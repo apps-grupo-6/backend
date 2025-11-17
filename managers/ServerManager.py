@@ -108,3 +108,21 @@ def set_user_as_banned(final_response, conn, cursor, user_id, request_id):
         final_response["ok"] = False
 
     return final_response
+
+@DatabaseUtils.with_db_connection
+def delete_expired_otp_tokens(final_response, conn, cursor):
+    try:
+        query = """
+            DELETE FROM otp_tokens
+            WHERE expires_at <= NOW() - INTERVAL '15 minute'
+        """
+
+        cursor.execute(query)
+        deleted_rows = cursor.rowcount
+        final_response["data"] = deleted_rows
+        conn.commit()
+    except:
+        logger.exception(f"an error occurred while deleting expired otp tokens")
+        final_response["ok"] = False
+
+    return final_response

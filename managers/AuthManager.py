@@ -8,7 +8,8 @@ def get_username_info(final_response, conn, cursor, username, request_id):
             SELECT 
                 u.id as user_id, 
                 u.password,
-                uc.email_verified
+                uc.email_verified,
+                uc.is_banned as is_banned
             FROM users u
             JOIN user_controls uc ON uc.user_id = u.id
             WHERE u.username = %s
