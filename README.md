@@ -17,17 +17,17 @@ Esto podría mejorarse integrando Kafka, Grafana o Prometheus, pero por cuestion
 
 # Usage / Uso
 ## English
-#### 1) First of all, the repository must be cloned and accessed
+### 1) First of all, the repository must be cloned and accessed
 ```bash
     git clone https://github.com/apps-grupo-6/backend.git
     cd backend
 ```
 
-#### 2) Then, you need to create a ```.env ``` file inside the ```/properties``` directory using the provided ```example.env``` as a base.
+### 2) Then, you need to create a ```.env ``` file inside the ```/properties``` directory using the provided ```example.env``` as a base.
    
    **Note:** This ```example.env``` file already includes the database configuration defined in the ```docker-compose.yml```, but you still need to fill in the missing values related to emails and JWT.
 
-#### 3) Finally, the project can be started using any of the following options:
+### 3) Finally, the project can be started using any of the following options:
 - Using the PowerShell helper tool:
 ```PowerShell
    .\run.ps1
@@ -75,7 +75,7 @@ Esto podría mejorarse integrando Kafka, Grafana o Prometheus, pero por cuestion
 
 # Useful information / Información útil
 ## English
-#### 1) If for any reason the database needs to be restored, it can be done by using:
+### 1) If for any reason the database needs to be restored, it can be done by using:
 
 ```bash
     docker compose down -v 
@@ -83,16 +83,17 @@ Esto podría mejorarse integrando Kafka, Grafana o Prometheus, pero por cuestion
 Then, the project should be started again.
 If any modifications were made, it is recommended to check that the ```.initdb``` folder contains only the two initial files.
 
-#### 2) If you need to check how the database is related:
+### 2) If you need to check how the database is related:
 [View the database structure on GitHub](https://github.com/apps-grupo-6/documentation/tree/desarrollo/database)
 
 ## Español
-#### 1) Si por algún motivo se necesita restaurar la base de datos, puede hacerse utilizando:
+### 1) Si por algún motivo se necesita restaurar la base de datos, puede hacerse utilizando:
 
 ```bash
     docker compose down -v 
 ```
 Y luego iniciar el proyecto nuevamente. En caso de haber modificado algo, revisar si en la carpeta ```.initdb``` solo están los 2 archivos iniciales.
 
-#### 2) Si necesitas revisar cómo está relacionada la base de datos:
+### 2) Si necesitas revisar cómo está relacionada la base de datos:
 [Ver estructura desde GitHub](https://github.com/apps-grupo-6/documentation/tree/desarrollo/database)
+
