@@ -80,7 +80,7 @@ def validate_session(func):
                 else:
                     logger.debug(f"{g.request_id} - user_id '{user_id}' can use this endpoint")
             else:
-                logger.debug(f"this request was done by a backend developer with the user_id '{user_id}'")
+                logger.debug(f"{g.request_id} - this request was done by a backend developer with the user_id '{user_id}'")
 
         except jwt.ExpiredSignatureError:
             logger.error(f"{g.request_id} - jwt token has expired")

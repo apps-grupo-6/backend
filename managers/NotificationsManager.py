@@ -6,6 +6,7 @@ def set_user_token(final_response, conn, cursor, user_id, expo_push_token, reque
     try:
         query = """
             INSERT INTO user_push_tokens (user_id, expo_push_token)
+            VALUES(%s, %s)
             ON CONFLICT (user_id) 
             DO UPDATE SET
                 expo_push_token = EXCLUDED.expo_push_token,
@@ -27,13 +28,13 @@ def get_class_participants_token(final_response, conn, cursor, class_id, request
         query = """
             SELECT upt.expo_push_token
             FROM class_participants cp
-            JOIN user_push_tokens upt ON class_participants.user_id = user_push_tokens.user_id
+            JOIN user_push_tokens upt ON cp.user_id = upt.user_id
             WHERE cp.class_id = %s
         """
         values = (class_id,)
 
         cursor.execute(query, values)
-        conn.commit()
+        final_response["data"] = cursor.fetchall()
     except:
         logger.exception(f"{request_id} - an error occurred while setting user expo token")
         final_response["ok"] = False

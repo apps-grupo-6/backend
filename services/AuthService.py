@@ -1,11 +1,11 @@
-import datetime, jwt
+import jwt
 
 from flask import g
 from configs.ServerConfig import logger
 
 from utils import UsersUtils, AuthUtils
 from configs import AuthConfig
-from repositories import AuthRepository, UsersRepository, OtpRepository
+from repositories import AuthRepository, UsersRepository
 
 
 def login(model, request_id):
@@ -50,11 +50,14 @@ def login(model, request_id):
     if last_login["error"]:
         return {}
 
+    roles = get_user_info['data']['roles']
     token = AuthUtils.generate_jwt_token(user_id=user_id, request_id=request_id)
     g.response_code = "0200"
     return {
         "data": {
             "token": token,
+            "roles": roles,
+            "user_id": user_id
         }
     }
 

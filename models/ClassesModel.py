@@ -13,4 +13,4 @@ class update_class(Schema):
     discipline_id = fields.String(required=False)
     scheduled_at = fields.String(required=False)
     max_participants = fields.String(required=False)
-    qr = fields.String(required=True, validate=validate.Length(min=1, max=150))
+    qr = fields.String(required=False, allow_none=True, validate=validate.Length(min=1, max=150))

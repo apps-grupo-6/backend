@@ -54,6 +54,10 @@ def send_push_notification(expo_push_token, title, body, request_id):
     }
 
     try:
-        requests.post("https://exp.host/--/api/v2/push/send", json=message, timeout=5)
+        resp = requests.post("https://exp.host/--/api/v2/push/send", json=message, timeout=5)
+
+        logger.info(
+            f"{request_id} - expo push response: {resp.status_code} {resp.text}"
+        )
     except:
         logger.exception(f"{request_id} - an error occurred while trying to sending push notification")

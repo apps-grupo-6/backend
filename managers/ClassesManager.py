@@ -14,6 +14,7 @@ def check_if_duplicated(final_response, conn, cursor, professor_id, location_id,
                 AND location_id = %s
                 AND discipline_id = %s
                 AND scheduled_at = %s
+                AND status NOT IN ('CANCELLED', 'FINISHED')
             LIMIT 1;
         """
         values = (professor_id, location_id, discipline_id, scheduled_at)
@@ -196,7 +197,9 @@ def get_all_classes(final_response, conn, cursor, request_id):
             LEFT JOIN locations l ON c.location_id = l.id  
             LEFT JOIN disciplines d ON c.discipline_id = d.id
             LEFT JOIN class_participants cp on c.id = cp.class_id
-            WHERE c.scheduled_at >= NOW() + INTERVAL '1 hour'
+            WHERE 
+                c.scheduled_at >= NOW()
+                AND c.status != 'CANCELLED'
             GROUP BY 
                 c.id, ui.first_name, ui.last_name,
                 c.location_id, l.city, l.address, l.name, d.name,
@@ -275,6 +278,7 @@ def get_user_upcoming_classes(final_response, conn, cursor, user_id, request_id)
                 cp.user_id = %s
                 AND c.ended_at IS NULL
                 AND c.scheduled_at >= NOW()
+                AND c.status = 'NOT STARTED'
         """
         values = (user_id,)
 
@@ -444,6 +448,26 @@ def start_class(final_response, conn, cursor, class_id, request_id):
         conn.commit()
     except:
         logger.exception(f"{request_id} - an error occurred while trying to start this class")
+        final_response["ok"] = False
+
+    return final_response
+
+@DatabaseUtils.with_db_connection
+def cancel_class(final_response, conn, cursor, class_id, request_id):
+    try:
+        query = """
+            UPDATE classes
+            SET 
+                updated_at = NOW(),
+                status = 'CANCELLED'
+            WHERE id = %s
+        """
+        values = (class_id,)
+
+        cursor.execute(query, values)
+        conn.commit()
+    except:
+        logger.exception(f"{request_id} - an error occurred while trying to cancel this class")
         final_response["ok"] = False
 
     return final_response

@@ -68,6 +68,7 @@ update_class_code_map = {
     "0412": ("scheduled_at cannot be earlier than the current scheduled_at", 400),
     "0413": ("scheduled_at cannot be in the past", 400),
     "0414": ("max_participants cannot be greater than the number of participants", 400),
+    "0415": ("this class_id was already cancelled", 400),
     "0500": ("the request could not be processed", 500),
     "0501": ("the request could not be processed", 500),
     "0502": ("the request could not be processed", 500),
@@ -131,4 +132,17 @@ start_class_code_map = {
     "0410": ("the requested class is already finished", 400),
     "0500": ("the request could not be processed", 500),
     "0501": ("the request could not be processed", 500)
+}
+
+cancel_class_code_map = {
+    "0200": ("ok", 200),
+    "0201": ("ok", 200),
+    "0404": ("invalid class_id", 404),
+    "0405": ("invalid class_id", 404),
+    "0410": ("a finished class can not be cancelled", 400),
+    "0411": ("the requested class is already cancelled", 400),
+    "0500": ("the request could not be processed", 500),
+    "0501": ("the request could not be processed", 500),
+    "0502": ("the request could not be processed", 500),
+    "0503": ("the request could not be processed", 500)
 }

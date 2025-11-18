@@ -1,8 +1,6 @@
 from configs.ServerConfig import logger
 
-from repositories import ClassesRepository
-
-def generate_notification_data(notification_type, class_id, request_id, errors_code_map):
+def generate_notification_data(notification_type, class_id, class_information, request_id, errors_code_map):
     final_response = {
         "error": False,
         "data": {
@@ -11,18 +9,10 @@ def generate_notification_data(notification_type, class_id, request_id, errors_c
         }
     }
 
-    logger.info(f"{request_id} - generating notification '{notification_type}' for class_id '{class_id}'...")
-
-    class_information = ClassesRepository.get_class_information(class_id=class_id,
-                                                                request_id=request_id,
-                                                                errors_code_map=errors_code_map)
-
-    if class_information["error"]:
-        final_response["error"] = True
-        return {}
+    logger.info(f"{request_id} - generating push notification '{notification_type}' for class_id '{class_id}'...")
 
     class_data = class_information["data"]
-    professor_full_name = f"{class_data['professor']['first_name']} {class_data['professor']['last_name']}"
+    professor_full_name = f"{class_data['professor_first_name']} {class_data['professor_last_name']}"
     gym_name = class_data['gym_name']
     class_discipline_name = class_data['class_discipline_name']
     day, hour = class_data["class_scheduled_at"].split(" ")

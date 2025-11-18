@@ -29,8 +29,8 @@ def get_class_participants_token(class_id, request_id, errors_code_map):
         return {"flag": -1}
 
     if not expo_push_tokens["data"]:
-        logger.error(f"{request_id} - this class_id has not any participants yet")
+        logger.debug(f"{request_id} - no push notification will be send because this class_id has not any participants yet")
         return {"flag": 0}
 
     logger.debug(f"{request_id} - {len(expo_push_tokens['data'])} expo_push_tokens retrieved successfully")
-    return {"flag": 1, "data": expo_push_tokens["data"]}
+    return {"flag": 1, "data": [row["expo_push_token"] for row in expo_push_tokens["data"]]}

@@ -51,7 +51,11 @@ def before_request():
 
     logger.info(f"{g.request_id} - begin")
     logger.info(f"{g.request_id} - connection from {client_ip}:{client_port}")
-    logger.info(f"{g.request_id} - origin: {origin} - referer: {referer}")
+
+    if not origin and not referer:
+        logger.info(f"{g.request_id} - origin: mobile app")
+    else:
+        logger.info(f"{g.request_id} - origin: {origin} - referer: {referer}")
 
     if request.method in ['POST', 'PUT'] and request.is_json:
         logger.info(f"{g.request_id} - request body: {request.json}")
@@ -82,8 +86,8 @@ def after_request(response):
     if g.send_push_notification_data and g.send_push_notification_users_token:
         length = len(g.send_push_notification_users_token)
 
-        for counter, token in enumerate(g.send_push_notification_users_token, start=1):
-            logger.debug(f"sending push notification {counter}/{length}")
+        logger.debug(f"{g.request_id} - sending {length} push notifications...")
+        for token in g.send_push_notification_users_token:
             ServerConnector.send_push_notification(expo_push_token=token,
                                                    title=g.send_push_notification_data["title"],
                                                    body=g.send_push_notification_data["body"],

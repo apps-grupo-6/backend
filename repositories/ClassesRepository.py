@@ -152,7 +152,7 @@ def get_user_upcoming_classes(user_id, request_id, errors_code_map):
 
 @ServerUtils.set_final_response
 def update_participants_status(class_id, request_id, errors_code_map):
-    logger.info(f"{request_id} - updating all class_id '{class_id}' participants' status, as it finished...")
+    logger.info(f"{request_id} - updating all class_id '{class_id}' participants' status, as it was cancelled...")
     participant_status = ClassesManager.update_participants_status(class_id=class_id, request_id=request_id)
 
     if not participant_status["ok"]:
@@ -259,4 +259,16 @@ def start_class(class_id, request_id, errors_code_map):
         return {"flag": -1}
 
     logger.debug(f"{request_id} - class started successfully")
+    return {"flag": 1}
+
+@ServerUtils.set_final_response
+def cancel_class(class_id, request_id, errors_code_map):
+    logger.info(f"{request_id} - cancelling class_id '{class_id}'...")
+    cancelled_class = ClassesManager.cancel_class(class_id=class_id, request_id=request_id)
+
+    if not cancelled_class["ok"]:
+        logger.critical(f"{request_id} - an error occurred while cancelling class")
+        return {"flag": -1}
+
+    logger.debug(f"{request_id} - class cancelled successfully")
     return {"flag": 1}

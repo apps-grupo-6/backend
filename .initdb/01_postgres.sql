@@ -290,7 +290,7 @@ COPY public.users (id, username, password, created_at, last_login_at, password_u
 4	test04	$2b$12$F/Fg2evLtW6Z991XT4QkE.9BazVeYZj0jhBtkC2ApiuV7IcAAD9H6	2025-09-01 22:52:16.440783	2025-09-22 09:23:27.212816	2025-09-21 19:20:14.031814
 5	test05	$2b$12$F/Fg2evLtW6Z991XT4QkE.9BazVeYZj0jhBtkC2ApiuV7IcAAD9H6	2025-09-21 01:50:19.62771	\N	\N
 6	test06	$2b$12$F/Fg2evLtW6Z991XT4QkE.9BazVeYZj0jhBtkC2ApiuV7IcAAD9H6	2025-09-21 01:56:12.04272	\N	\N
--1	runAdmin	$2b$12$F/Fg2evLtW6Z991XT4QkE.9BazVeYZj0jhBtkC2ApiuV7IcAAD9H6	2025-09-01 21:10:19.564	\N	\N
+-1	adminn	$2b$12$F/Fg2evLtW6Z991XT4QkE.9BazVeYZj0jhBtkC2ApiuV7IcAAD9H6	2025-09-01 21:10:19.564	\N	\N
 \.
 
 COPY public.user_information (user_id, first_name, last_name, telephone, contact_email, updated_at) FROM stdin;
@@ -320,9 +320,9 @@ COPY public.user_controls (
 
 -- Roles related tables
 COPY public.roles (id, name) FROM stdin;
-1	USUARIO
+1	USER
 2	BACKEND DEVELOPER
-3	PROFESOR
+3	TRAINER
 \.
 
 
@@ -345,9 +345,8 @@ COPY public.role_permissions (id, role_id, endpoint, method) FROM stdin;
 17	1	/classes/history/<id>/<id>	GET
 18	1	/locations	GET
 20	1	/otp/<id>	DELETE
-21	1	/notifications	POST
-22	1	/notifications/setUserToken	POST
-23	3	/classes/<id>/start	POST
+21	1	/notifications/setUserToken	POST
+22	3	/classes/<id>/start	POST
 \.
 
 COPY public.user_roles (id, user_id, role_id) FROM stdin;

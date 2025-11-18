@@ -3,8 +3,8 @@ import datetime
 from configs.ServerConfig import logger
 from flask import g
 
-from repositories import ClassesRepository, UsersRepository, LocationsRepository, DisciplinesRepository
-from utils import ClassesUtils
+from repositories import ClassesRepository, UsersRepository, LocationsRepository, DisciplinesRepository, NotificationsRepository
+from utils import ClassesUtils, NotificationsUtils
 
 def get_all_classes(request_id):
     # Created by Luciana
@@ -149,7 +149,7 @@ def update_class(model, class_id, user_id, request_id):
         return {}
 
     if "scheduled_at" in model:
-        if model["scheduled_at"] <= class_information["data"]["scheduled_at"]:
+        if model["scheduled_at"] <= class_information["data"]["class_scheduled_at"]:
             logger.error(f"{request_id} - scheduled_at cannot be earlier than the current scheduled_at")
             g.response_code = "0412"
             return {}
@@ -209,7 +209,7 @@ def finish_class(class_id, user_id, request_id):
         g.response_code = "9999"
         return {}
 
-    if class_information["data"]["ended_at"]:
+    if class_information["data"]["class_ended_at"]:
         logger.error(f"{request_id} - class already finished")
         g.response_code = "0410"
         return {}
@@ -418,7 +418,7 @@ def start_class(class_id, user_id, request_id):
         g.response_code = "9999"
         return {}
 
-    if class_information["data"]["ended_at"]:
+    if class_information["data"]["class_ended_at"]:
         logger.error(f"{request_id} - class already finished")
         g.response_code = "0410"
         return {}
@@ -429,5 +429,68 @@ def start_class(class_id, user_id, request_id):
                                       "database_error_code": "0501",
                                   })
 
+    g.response_code = "0200"
+    return {}
+
+def cancel_class(class_id, user_id, request_id):
+    class_information = ClassesUtils.check_and_get_class_information(class_id=class_id,
+                                                                     request_id=request_id,
+                                                                     errors_code_map={
+                                                                         "database_error_code": "0500",
+                                                                         "invalid_data_error_code": "0404"
+                                                                     })
+
+    if class_information["error"]:
+        return {}
+
+    professor_id = class_information["data"]["professor_id"]
+    if not professor_id == user_id:
+        g.alert_description = f"user_id '{user_id}' tried to cancel class_id '{class_id}' which professor_id is '{professor_id}'"
+        logger.critical(f"{request_id} - [SECURITY BREACH] {g.alert_description}")
+        g.response_code = "9999"
+        return {}
+
+    if class_information["data"]["class_ended_at"]:
+        logger.error(f"{request_id} - a finished class can not be cancelled")
+        g.response_code = "0410"
+        return {}
+
+    if class_information["data"]["class_status"] == "CANCELLED":
+        logger.error(f"{request_id} - this class is already cancelled")
+        g.response_code = "0411"
+        return {}
+
+    cancelled_class = ClassesRepository.cancel_class(class_id=class_id,
+                                                    request_id=request_id,
+                                                    errors_code_map={"database_error_code": "0501"})
+
+    if cancelled_class["error"]:
+        return {}
+
+    notification_type = "CLASS_CANCELLED"
+    notification_data = NotificationsUtils.generate_notification_data(notification_type=notification_type,
+                                                                      class_id=class_id,
+                                                                      class_information=class_information,
+                                                                      request_id=request_id,
+                                                                      errors_code_map={
+                                                                          "invalid_data_error_code": "0405",
+                                                                          "database_error_code": "0502"
+                                                                      })
+
+    if notification_data["error"]:
+        return {}
+
+    users_to_notify = NotificationsRepository.get_class_participants_token(class_id=class_id,
+                                                                           request_id=request_id,
+                                                                           errors_code_map={
+                                                                               "invalid_data_error_code": "0201",
+                                                                               "database_error_code": "0503"
+                                                                           })
+
+    if users_to_notify["error"]:
+        return {}
+
+    g.send_push_notification_data = notification_data["data"]
+    g.send_push_notification_users_token = users_to_notify["data"]
     g.response_code = "0200"
     return {}

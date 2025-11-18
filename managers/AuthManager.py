@@ -9,10 +9,22 @@ def get_username_info(final_response, conn, cursor, username, request_id):
                 u.id as user_id, 
                 u.password,
                 uc.email_verified,
-                uc.is_banned as is_banned
+                uc.is_banned,
+                COALESCE(
+                    jsonb_agg(DISTINCT r.name) 
+                    FILTER (WHERE r.name IS NOT NULL),
+                    '[]'::jsonb
+                ) AS roles
             FROM users u
             JOIN user_controls uc ON uc.user_id = u.id
+            LEFT JOIN user_roles ur ON ur.user_id = u.id
+            LEFT JOIN roles r ON r.id = ur.role_id
             WHERE u.username = %s
+            GROUP BY 
+                u.id,
+                u.password,
+                uc.email_verified,
+                uc.is_banned
             LIMIT 1;
         """
         values = (username,)
