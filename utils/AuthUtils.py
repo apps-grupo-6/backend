@@ -48,7 +48,7 @@ def validate_session(func):
                 data = ServerUtils.USERS_DATA["data"]
 
             user_data = data[str_user_id]
-            logger.debug(f"{g.request_id} - user_id exists. Roles: {user_data['roles']}")
+            logger.debug(f"{g.request_id} - user_id exists and has roles: {user_data['roles']}")
             g.user_id = user_id
             g.user_data = user_data
 

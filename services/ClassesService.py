@@ -21,13 +21,14 @@ def get_all_classes(request_id):
     }
 
 def create_class(model, user_id, request_id):
+    professor_id = model["professor_id"] if "professor_id" in model else user_id
     location_id = model["location_id"]
     discipline_id = model["discipline_id"]
     scheduled_at = model["scheduled_at"]
     max_participants = model["max_participants"]
     qr = model["qr"]
 
-    is_duplicated = ClassesRepository.check_if_duplicated(professor_id=user_id,
+    is_duplicated = ClassesRepository.check_if_duplicated(professor_id=professor_id,
                                                           location_id=location_id,
                                                           discipline_id=discipline_id,
                                                           scheduled_at=scheduled_at,
@@ -40,7 +41,7 @@ def create_class(model, user_id, request_id):
     if is_duplicated["error"]:
         return {}
 
-    exists_user = UsersRepository.check_if_user_exists(user_id=user_id,
+    exists_user = UsersRepository.check_if_user_exists(user_id=professor_id,
                                                        request_id=request_id,
                                                        errors_code_map={
                                                            "database_error_code": "0501",
@@ -71,7 +72,7 @@ def create_class(model, user_id, request_id):
         return {}
 
     created_class = ClassesRepository.create_class(qr=qr,
-                                                   professor_id=user_id,
+                                                   professor_id=professor_id,
                                                    location_id=location_id,
                                                    discipline_id=discipline_id,
                                                    scheduled_at=scheduled_at,
