@@ -214,7 +214,7 @@ def check_if_participant_exists(class_id, user_id, request_id, errors_code_map):
         return {"flag": 0}
 
     logger.debug(f"{request_id} - user_id is a participant in this class")
-    return {"flag": 1}
+    return {"flag": 1, "data": class_exists["data"]}
 
 @ServerUtils.set_final_response
 def check_if_user_doesnt_participate(class_id, user_id, request_id, errors_code_map):
@@ -271,4 +271,18 @@ def cancel_class(class_id, request_id, errors_code_map):
         return {"flag": -1}
 
     logger.debug(f"{request_id} - class cancelled successfully")
+    return {"flag": 1}
+
+@ServerUtils.set_final_response
+def check_in_participant(class_id, user_id, request_id, errors_code_map):
+    logger.info(f"{request_id} - checking-in user_id '{user_id}' to class_id '{class_id}'...")
+    check_in_participant = ClassesManager.check_in_participant(class_id=class_id,
+                                                               user_id=user_id,
+                                                               request_id=request_id)
+
+    if not check_in_participant["ok"]:
+        logger.critical(f"{request_id} - an error occurred while checking-in participant to this class")
+        return {"flag": -1}
+
+    logger.debug(f"{request_id} - user checked-in successfully")
     return {"flag": 1}

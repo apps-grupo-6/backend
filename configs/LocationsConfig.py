@@ -28,7 +28,7 @@ country_codes = [
 ]
 
 create_location_code_map = {
-    "0200": ("ok", 200),
+    "0201": ("location created", 201),
     "0400": ("bad request", 400),
     "0410": ("invalid owner_id", 400),
     "0500": ("the request could not be processed", 500),

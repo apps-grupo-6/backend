@@ -4,14 +4,12 @@ from marshmallow import ValidationError
 from configs.ServerConfig import logger
 
 from services import OtpServices
-from configs import OtpConfig
-from utils import AuthUtils, ServerUtils
+from utils import AuthUtils
 from models import OtpModel
 
 bp = Blueprint('otp', __name__)
 
 @bp.post("/")
-@ServerUtils.configure_request(description_code_map=OtpConfig.create_otp_code_map, method="POST")
 def create_otp():
     try:
         logger.info(f"{g.request_id} - starting create_otp")
@@ -30,7 +28,6 @@ def create_otp():
     return OtpServices.create_otp(model=model, request_id=g.request_id)
 
 @bp.post("/resend")
-@ServerUtils.configure_request(description_code_map=OtpConfig.resend_otp_code_map, method="POST", endpoint="resend")
 def resend_otp():
     try:
         logger.info(f"{g.request_id} - starting resend_otp")
@@ -49,7 +46,6 @@ def resend_otp():
     return OtpServices.resend_otp(model=model, request_id=g.request_id)
 
 @bp.post("/check")
-@ServerUtils.configure_request(description_code_map=OtpConfig.check_otp_code_map, method="POST", endpoint="check")
 def check_otp():
     try:
         logger.info(f"{g.request_id} - starting check_otp")
@@ -68,7 +64,6 @@ def check_otp():
     return OtpServices.check_otp(model=model, request_id=g.request_id)
 
 @bp.delete("/<int:id>")
-@ServerUtils.configure_request(description_code_map=OtpConfig.delete_otp_code_map, method="DELETE", endpoint="<id>")
 @AuthUtils.validate_session
 def delete_otp(id):
     logger.info(f"{g.request_id} - starting delete_otp")

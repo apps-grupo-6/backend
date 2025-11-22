@@ -1,9 +1,10 @@
 import jwt, datetime
-from flask import request, g
 from functools import wraps
 
-from configs import AuthConfig
+from flask import request, g
 from configs.ServerConfig import logger
+
+from configs import AuthConfig
 from repositories import AuthRepository
 from utils import ServerUtils
 
@@ -11,23 +12,22 @@ def validate_session(func):
     @wraps(func)
     def wrapper(*args, **kwargs):
         logger.info(f"{g.request_id} - checking jwt token")
-        auth_header = request.headers.get("Authorization", None)
+        token = request.cookies.get("access_token")
 
-        if not auth_header or not auth_header.startswith("Bearer "):
-            logger.error(f"{g.request_id} - jwt token is absent")
+        if not token:
+            logger.error(f"{g.request_id} - jwt token cookie is absent")
             g.response_code = '0401'
-            return {"code": "0401", "description": "Authorization header missing or invalid"}, 401
+            return {"code": "0401", "description": "jwt token cookie missing or invalid"}, 401
 
         try:
-            token = auth_header.split(" ")[1]
             decoded = jwt.decode(token, AuthConfig.jwt_secret, algorithms=[AuthConfig.jwt_algorithm])
             user_id = decoded["user_id"] if "data" not in decoded else decoded["data"]["user_id"]
-            logger.debug(f"{g.request_id} - jwt token is valid")
+            str_user_id = str(user_id)
 
-            logger.info(f"{g.request_id} - endpoint requested by user_id: '{user_id}'")
+            logger.debug(f"{g.request_id} - jwt token is valid")
+            logger.info(f"{g.request_id} - endpoint requested by user_id: '{str_user_id}'")
 
             logger.info(f"{g.request_id} - checking if user is cached...")
-            str_user_id = str(user_id)
             if not str_user_id in ServerUtils.USERS_DATA["data"]: # maybe user registered between retrieving users cron execution
                 logger.info(f"{g.request_id} - checking if user_id '{user_id}' exists our database...")
                 exists = AuthRepository.check_if_user_exists(user_id=user_id, request_id=g.request_id)
@@ -48,7 +48,7 @@ def validate_session(func):
                 data = ServerUtils.USERS_DATA["data"]
 
             user_data = data[str_user_id]
-            logger.debug(f"{g.request_id} - user_id exists")
+            logger.debug(f"{g.request_id} - user_id exists. Roles: {user_data['roles']}")
             g.user_id = user_id
             g.user_data = user_data
 
@@ -95,18 +95,19 @@ def validate_session(func):
 
     return wrapper
 
-def check_jwt_token(jwt_token):
+def check_jwt_token():
     final_response = {
         "data": {},
         "error": True,
         "error_code": -1
     }
 
-    if jwt_token.startswith("Bearer"):
-        jwt_token = jwt_token.split(" ")[1]
+    logger.info(f"{g.request_id} - checking jwt token")
+    jwt_token = request.cookies.get("access_token")
 
     try:
-        jwt.decode(jwt_token, AuthConfig.jwt_secret, algorithms=[AuthConfig.jwt_algorithm])
+        decoded = jwt.decode(jwt_token, AuthConfig.jwt_secret, algorithms=[AuthConfig.jwt_algorithm])
+        final_response["data"] = decoded
         final_response["error_code"] = 0
     except jwt.ExpiredSignatureError:
         decoded = jwt.decode(jwt_token, options={"verify_signature": False})
@@ -117,11 +118,12 @@ def check_jwt_token(jwt_token):
 
     return final_response
 
-def generate_jwt_token(user_id, request_id):
+def generate_jwt_token(user_id, roles, request_id):
     logger.info(f"{request_id} - generating jwt token...")
     payload = {
-        "exp": datetime.datetime.utcnow() + datetime.timedelta(seconds=AuthConfig.jwt_exp_delta_seconds),
-        "user_id": user_id
+        "exp": datetime.datetime.now(datetime.timezone.utc) + datetime.timedelta(seconds=AuthConfig.jwt_exp_delta_seconds),
+        "user_id": user_id,
+        "roles": roles
     }
 
     token = jwt.encode(payload, AuthConfig.jwt_secret, algorithm=AuthConfig.jwt_algorithm)

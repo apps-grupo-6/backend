@@ -1,14 +1,12 @@
-import json
-import re
+import json, re
 
 from flask import Flask, g, jsonify, request
 from flask_cors import CORS
 from datetime import datetime
 from apscheduler.schedulers.background import BackgroundScheduler
 
-from configs import ServerConfig
+from configs import ServerConfig, AuthConfig
 from configs.ServerConfig import enabled, logger, special_errors_code_map
-from controllers import AuthController, UsersController, OtpController, ClassesController, LocationsController, NotificationsController
 from connectors import ServerConnector
 from repositories import ServerRepository
 from utils import ServerUtils
@@ -16,30 +14,26 @@ from utils import ServerUtils
 app = Flask(__name__, static_folder=None)
 app.url_map.strict_slashes = False
 
-CONTROLLERS_BP = {
-    "auth": AuthController.bp,
-    "users": UsersController.bp,
-    "otp": OtpController.bp,
-    "classes": ClassesController.bp,
-    "locations": LocationsController.bp,
-    "notifications": NotificationsController.bp,
-}
-
 @app.before_request
 def before_request():
     if request.method == "OPTIONS":
+        return
+
+    rule = getattr(request, "url_rule", None)
+    if not rule:
         return
 
     g.request_id = datetime.now().strftime("%Y%m%d%H%M%S%f")
     g.send_email_data = {}
     g.alert_description = ""
     g.response_code = ""
+    g.description = ""
     g.description_code_map = {}
     g.begin_time = datetime.now()
     g.user_id = -1
     g.user_data = {}
-    g.endpoint = ""
-    g.method = ""
+    g.endpoint = rule.endpoint
+    g.method = request.method
     g.endpoint_id_list = []
     g.send_push_notification_data = {}
     g.send_push_notification_users_token = []
@@ -59,15 +53,13 @@ def before_request():
 
     if request.method in ['POST', 'PUT'] and request.is_json:
         logger.info(f"{g.request_id} - request body: {request.json}")
-    else:
-        logger.info(f"{g.request_id} - request method: {request.method}")
+
+    ServerUtils.configure_request(rule=rule)
 
 @app.after_request
 def after_request(response):
     if request.method == "OPTIONS":
         return response
-
-    description = ""
 
     if g.send_email_data:
         ServerConnector.send_email(email=g.send_email_data, request_id=g.request_id)
@@ -80,7 +72,7 @@ def after_request(response):
             else:
                 ServerRepository.set_user_as_suspect(user_id=g.user_id, request_id=g.request_id)
 
-        ServerUtils.get_users() # forces to reload users cache to update user status if banned o flagged as suspect
+        ServerUtils.get_users() # forces to reload users cache to update user status if banned or flagged as suspect
         ServerUtils.send_email_alert_backend() # notifies backend developers to check this alert
 
     if g.send_push_notification_data and g.send_push_notification_users_token:
@@ -103,15 +95,15 @@ def after_request(response):
             # 0403 = user role cant use the required endpoint with this method
             if not g.response_code in ('0401', '0403'): # if not related to any login error, retrieve all related information
                 if g.response_code in special_errors_code_map:
-                    description = "the request could not be processed"
+                    g.description = "the request could not be processed"
                     status_code = 500
                 else:
                     response_data = g.description_code_map[g.response_code]
-                    description = response_data[0]
+                    g.description = response_data[0]
                     status_code = response_data[1]
 
                 original_data["code"] = g.response_code
-                original_data["description"] = description
+                original_data["description"] = g.description
                 response.status_code = status_code
 
             payload = json.dumps(original_data, ensure_ascii=False)
@@ -119,6 +111,24 @@ def after_request(response):
 
             if 'Content-Length' in response.headers:
                 del response.headers['Content-Length']
+
+            if g.endpoint and (
+                (g.endpoint == "/auth/" and g.response_code == "0200")
+                or (g.endpoint == "/auth/refresh" and g.response_code in ("0200", "0201")
+            )):
+                response.set_cookie(
+                    "access_token",
+                    original_data["data"]["token"],
+                    httponly=True,
+                    samesite="lax",
+                    max_age=int(AuthConfig.jwt_exp_delta_seconds),
+                )
+            elif g.endpoint == "/auth/logout":
+                response.set_cookie(
+                    "access_token",
+                    "",
+                    max_age=0
+                )
 
     g.end_time = datetime.now() - g.begin_time
     end_time_seconds = g.end_time.total_seconds()
@@ -130,7 +140,7 @@ def after_request(response):
                                         user_id=g.user_id,
                                         execution_time=end_time_seconds)
 
-    logger.debug(f"{g.request_id};{g.user_id};{g.method};{g.endpoint};{g.response_code};{description}")
+    logger.debug(f"{g.request_id};{g.user_id};{g.method};{g.endpoint};{g.response_code};{g.description}")
     logger.info(f"{g.request_id} - ended after {end_time_seconds} seconds")
     return response
 
@@ -199,14 +209,14 @@ for check in enabled:
 
     if controller_enabled == "1":
         logger.debug(msg=f"{controller_name} is enabled")
-        bp = CONTROLLERS_BP[controller_name]
+        bp = ServerUtils.controller_bp(controller_name=controller_name)
         app.register_blueprint(bp, url_prefix=f"/api/{controller_name}")
 
 #CORS(app, resources=build_cors_resources(app))
 CORS(app,
      resources={r"/api/*": {
          "origins": "*",
-         "methods": ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+         "methods": ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
          "allow_headers": ["Content-Type", "Authorization"],
          "expose_headers": ["Content-Type", "Authorization"],
          "supports_credentials": True

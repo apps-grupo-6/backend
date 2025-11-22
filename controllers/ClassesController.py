@@ -1,16 +1,14 @@
 from flask import Blueprint, g, request
 from marshmallow import ValidationError
 from configs.ServerConfig import logger
-from utils import AuthUtils, ServerUtils
+from utils import AuthUtils
 
 bp = Blueprint('classes', __name__)
 
-from configs import ClassesConfig
 from models import ClassesModel
 from services import ClassesService
 
 @bp.get("/")
-@ServerUtils.configure_request(description_code_map=ClassesConfig.get_all_classes_code_map, method="GET")
 @AuthUtils.validate_session
 def get_all_classes():
     # Created by Luciana
@@ -18,7 +16,6 @@ def get_all_classes():
     return ClassesService.get_all_classes(request_id=g.request_id)
 
 @bp.post("/")
-@ServerUtils.configure_request(description_code_map=ClassesConfig.create_class_code_map, method="POST")
 @AuthUtils.validate_session
 def create_class():
     try:
@@ -35,33 +32,29 @@ def create_class():
         }
 
     logger.info(f"{g.request_id} - finished mandatory fields check")
-    return ClassesService.create_class(model=model, request_id=g.request_id)
+    return ClassesService.create_class(model=model, user_id=g.user_id, request_id=g.request_id)
 
 @bp.get("/upcoming")
-@ServerUtils.configure_request(description_code_map=ClassesConfig.upcoming_classes_code_map, method="GET", endpoint="upcoming")
 @AuthUtils.validate_session
 def get_user_upcoming_classes():
     logger.info(f"{g.request_id} - starting get_user_upcoming_classes")
     return ClassesService.get_user_upcoming_classes(user_id=g.user_id, request_id=g.request_id)
 
 @bp.get("/history")
-@bp.get("/history/<string:since>")
-@bp.get("/history/<string:since>/<string:until>")
-@ServerUtils.configure_request(description_code_map=ClassesConfig.get_user_classes_history_code_map, method="GET", endpoint="history")
 @AuthUtils.validate_session
-def get_user_classes_history(since=None, until=None):
+def get_user_classes_history():
     logger.info(f"{g.request_id} - starting get_user_classes_history")
+    since = request.args.get("since", None)
+    until = request.args.get("until", None)
     return ClassesService.get_user_classes_history(user_id=g.user_id, since=since, until=until, request_id=g.request_id)
 
 @bp.get("/<int:id>")
-@ServerUtils.configure_request(description_code_map=ClassesConfig.get_class_code_map, method="GET", endpoint="<id>")
 @AuthUtils.validate_session
 def get_class(id):
     logger.info(f"{g.request_id} - starting get_class")
     return ClassesService.get_class(class_id=id, request_id=g.request_id)
 
 @bp.put("/<int:id>")
-@ServerUtils.configure_request(description_code_map=ClassesConfig.update_class_code_map, method="PUT", endpoint="<id>")
 @AuthUtils.validate_session
 def update_class(id):
     try:
@@ -80,44 +73,44 @@ def update_class(id):
     logger.info(f"{g.request_id} - finished mandatory fields check")
     return ClassesService.update_class(model=model, class_id=id, user_id=g.user_id, request_id=g.request_id)
 
-@bp.delete("/<int:id>")
-@ServerUtils.configure_request(description_code_map=ClassesConfig.cancel_class_code_map, method="DELETE", endpoint="<id>")
+@bp.patch("/<int:id>/cancel")
 @AuthUtils.validate_session
 def cancel_class(id):
     logger.info(f"{g.request_id} - starting cancel_class")
     return ClassesService.cancel_class(class_id=id, user_id=g.user_id, request_id=g.request_id)
 
-@bp.post("/<int:id>/start")
-@ServerUtils.configure_request(description_code_map=ClassesConfig.start_class_code_map, method="POST", endpoint="<id>/start")
+@bp.patch("/<int:id>/start")
 @AuthUtils.validate_session
 def start_class(id):
     logger.info(f"{g.request_id} - starting start_class")
     return ClassesService.start_class(class_id=id, user_id=g.user_id, request_id=g.request_id)
 
-@bp.delete("/<int:id>/finish")
-@ServerUtils.configure_request(description_code_map=ClassesConfig.finish_class_code_map, method="DELETE", endpoint="<id>/finish")
+@bp.patch("/<int:id>/finish")
 @AuthUtils.validate_session
 def finish_class(id):
     logger.info(f"{g.request_id} - starting finish_class")
     return ClassesService.finish_class(class_id=id, user_id=g.user_id, request_id=g.request_id)
 
 @bp.post("/<int:id>/participant")
-@ServerUtils.configure_request(description_code_map=ClassesConfig.add_participant_code_map, method="POST", endpoint="<id>/participant")
 @AuthUtils.validate_session
 def add_participant(id):
     logger.info(f"{g.request_id} - starting add_participant")
     return ClassesService.add_participant(class_id=id, user_id=g.user_id, request_id=g.request_id)
 
-@bp.delete("/<int:id>/participant")
-@ServerUtils.configure_request(description_code_map=ClassesConfig.cancel_participant_code_map, method="DELETE", endpoint="<id>/participant")
+@bp.patch("/<int:id>/participant/cancel")
 @AuthUtils.validate_session
 def cancel_participant(id):
     logger.info(f"{g.request_id} - starting cancel_participant")
     return ClassesService.cancel_participant(class_id=id, user_id=g.user_id, request_id=g.request_id)
 
-@bp.post("/<int:id>/participant/confirm")
-@ServerUtils.configure_request(description_code_map=ClassesConfig.confirm_participant_code_map, method="POST", endpoint="<id>/participant/confirm")
+@bp.patch("/<int:id>/participant/confirm")
 @AuthUtils.validate_session
 def confirm_participant(id):
     logger.info(f"{g.request_id} - starting confirm_participant")
     return ClassesService.confirm_participant(class_id=id, user_id=g.user_id, request_id=g.request_id)
+
+@bp.patch("/<int:id>/participant/check-in")
+@AuthUtils.validate_session
+def check_in_participant(id):
+    logger.info(f"{g.request_id} - starting check_in_participant")
+    return ClassesService.check_in_participant(class_id=id, user_id=g.user_id, request_id=g.request_id)

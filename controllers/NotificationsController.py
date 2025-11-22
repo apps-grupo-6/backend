@@ -1,15 +1,13 @@
 from flask import Blueprint, g, request
 from marshmallow import ValidationError
 from configs.ServerConfig import logger
-from utils import AuthUtils, ServerUtils
+from utils import AuthUtils
 
-from configs import NotificationsConfig
 from models import NotificationsModel
 from services import NotificationsService
 bp = Blueprint('notifications', __name__)
 
-@bp.post("/setUserToken")
-@ServerUtils.configure_request(description_code_map=NotificationsConfig.set_user_token_code_map, method="POST", endpoint="setUserToken")
+@bp.post("/token")
 @AuthUtils.validate_session
 def set_user_token():
     try:

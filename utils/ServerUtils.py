@@ -1,32 +1,60 @@
-from flask import g
+import importlib, re
 from functools import wraps
 
+from flask import g, request
 from configs.ServerConfig import logger
+
 from connectors import ServerConnector
 from repositories import ServerRepository
 from templates import ServerTemplates, UserTemplate
 
 USERS_DATA = {}
 BACKEND_DEVELOPERS = {}
+DESCRIPTIONS_CODE_MAPS = {}
+CONTROLLERS_BP = {}
 
-def configure_request(description_code_map, method="", endpoint=""):
-    def decorator(func):
-        @wraps(func)
-        def wrapper(*args, **kwargs):
-            g.method = method
-            g.description_code_map = description_code_map
+def configure_request(rule):
+    global DESCRIPTIONS_CODE_MAPS
+    bp_name, func_name = g.endpoint.split(".", 1)
+    config_module_name = f"configs.{bp_name.capitalize()}Config"
+    endpoint_code_map = f"{func_name}_code_map"
 
-            final_endpoint = endpoint
+    try:
+        if config_module_name not in DESCRIPTIONS_CODE_MAPS:
+            DESCRIPTIONS_CODE_MAPS[config_module_name] = importlib.import_module(config_module_name)
+    except ModuleNotFoundError:
+        logger.exception(f"{g.request_id} - config module '{config_module_name}' not found")
 
-            if endpoint and "<id>" in endpoint:
-                id = str(kwargs['id'])
-                g.endpoint_id_list.append(id)
-                final_endpoint = endpoint.replace("<id>", id)
+    try:
+        config_module = DESCRIPTIONS_CODE_MAPS[config_module_name]
+        g.description_code_map = getattr(config_module, endpoint_code_map)
+    except AttributeError:
+        logger.exception(f"{g.request_id} - endpoint config code map '{endpoint_code_map}' not found")
 
-            g.endpoint = f"/{func.__module__.split('.')[-1].replace('Controller', '').lower()}/{final_endpoint}"
-            return func(*args, **kwargs)
-        return wrapper
-    return decorator
+    normalized = re.sub(r"<[^:<>]+:([^<>]+)>", r"<\1>", rule.rule).replace("/api", "")
+    g.endpoint = normalized
+    g.endpoint_id_list = []
+
+    for key, value in request.view_args.items():
+        g.endpoint_id_list.append(str(value))
+
+def controller_bp(controller_name):
+    global CONTROLLERS_BP
+
+    module_name = f"controllers.{controller_name.capitalize()}Controller"
+
+    if controller_name in CONTROLLERS_BP:
+        return CONTROLLERS_BP[controller_name]
+
+    try:
+        module = importlib.import_module(module_name)
+        bp = getattr(module, "bp")
+        CONTROLLERS_BP[controller_name] = bp
+    except ModuleNotFoundError:
+        raise RuntimeError(f"Controller module not found: {module_name}")
+    except AttributeError:
+        raise RuntimeError(f"Controller module {module_name} has no 'bp' attribute")
+    return bp
 
 def set_final_response(func):
     @wraps(func)
@@ -92,8 +120,7 @@ def send_email_alert_backend():
                                                            response_code=response_code)
     }
 
-    logger.debug(f"{g.request_id} - sending email: {email}")
-    logger.info(f"{g.request_id} - notifying all backend developers...")
+    logger.critical(f"{g.request_id} - sending alert email and notifying all backend developers...")
     for developer in BACKEND_DEVELOPERS:
         backend_developer = BACKEND_DEVELOPERS[developer]
         email["user_email"] = backend_developer["user_email"]
@@ -119,5 +146,5 @@ def send_email_account_blocked(user_data):
                                                                  username=username)
     }
 
-    logger.debug(f"{g.request_id} - sending email: {email}")
+    logger.info(f"{g.request_id} - notifying user being banned...")
     ServerConnector.send_email(email=email, request_id=g.request_id)

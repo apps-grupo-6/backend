@@ -326,27 +326,29 @@ COPY public.roles (id, name) FROM stdin;
 \.
 
 
-COPY public.role_permissions (id, role_id, endpoint, method) FROM stdin;
-1	1	/auth	POST
-2	1	/auth/otp	POST
-3	1	/classes	GET
-4	1	/classes/upcoming	GET
-5	1	/classes/<id>	GET
-6	1	/classes/<id>/participant	POST
-7	1	/classes/<id>/participant	DELETE
-8	1	/otp	POST
-9	1	/users	POST
-10	1	/classes/<id>/participant/confirm	POST
-11	3	/classes/<id>/	DELETE
-13	1	/users	GET
-14	1	/users	PUT
-15	1	/classes/history	GET
-16	1	/classes/history/<id>	GET
-17	1	/classes/history/<id>/<id>	GET
-18	1	/locations	GET
-20	1	/otp/<id>	DELETE
-21	1	/notifications/setUserToken	POST
-22	3	/classes/<id>/start	POST
+COPY public.role_permissions (role_id, endpoint, method) FROM stdin;
+1	/classes	GET
+3	/classes	POST
+1	/classes/history	GET
+1	/classes/upcoming	GET
+1	/classes/<id>	GET
+3	/classes/<id>	PUT
+3	/classes/<id>/start	PATCH
+3	/classes/<id>/finish	PATCH
+3	/classes/<id>/cancel	PATCH
+1	/classes/<id>/participant	POST
+1	/classes/<id>/participant/cancel	PATCH
+1	/classes/<id>/participant/confirm	PATCH
+1	/classes/<id>/participant/check-in	PATCH
+1	/locations	GET
+3	/locations	POST
+1	/notifications/token	POST
+1	/otp/<id>	DELETE
+1	/users	POST
+1	/users	GET
+1	/users	PUT
+1	/auth/refresh	POST
+1	/auth/logout	POST
 \.
 
 COPY public.user_roles (id, user_id, role_id) FROM stdin;

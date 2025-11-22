@@ -1,7 +1,7 @@
 import datetime
 
-from configs.ServerConfig import logger
 from flask import g
+from configs.ServerConfig import logger
 
 from repositories import ClassesRepository, UsersRepository, LocationsRepository, DisciplinesRepository, NotificationsRepository
 from utils import ClassesUtils, NotificationsUtils
@@ -20,15 +20,14 @@ def get_all_classes(request_id):
         "data": classes_data
     }
 
-def create_class(model, request_id):
-    professor_id = model["professor_id"]
+def create_class(model, user_id, request_id):
     location_id = model["location_id"]
     discipline_id = model["discipline_id"]
     scheduled_at = model["scheduled_at"]
     max_participants = model["max_participants"]
     qr = model["qr"]
 
-    is_duplicated = ClassesRepository.check_if_duplicated(professor_id=professor_id,
+    is_duplicated = ClassesRepository.check_if_duplicated(professor_id=user_id,
                                                           location_id=location_id,
                                                           discipline_id=discipline_id,
                                                           scheduled_at=scheduled_at,
@@ -41,7 +40,7 @@ def create_class(model, request_id):
     if is_duplicated["error"]:
         return {}
 
-    exists_user = UsersRepository.check_if_user_exists(user_id=professor_id,
+    exists_user = UsersRepository.check_if_user_exists(user_id=user_id,
                                                        request_id=request_id,
                                                        errors_code_map={
                                                            "database_error_code": "0501",
@@ -72,7 +71,7 @@ def create_class(model, request_id):
         return {}
 
     created_class = ClassesRepository.create_class(qr=qr,
-                                                   professor_id=professor_id,
+                                                   professor_id=user_id,
                                                    location_id=location_id,
                                                    discipline_id=discipline_id,
                                                    scheduled_at=scheduled_at,
@@ -83,7 +82,7 @@ def create_class(model, request_id):
     if created_class["error"]:
         return {}
 
-    g.response_code = "0200"
+    g.response_code = "0201"
     return {}
 
 def get_user_upcoming_classes(user_id, request_id):
@@ -149,14 +148,9 @@ def update_class(model, class_id, user_id, request_id):
         return {}
 
     if "scheduled_at" in model:
-        if model["scheduled_at"] <= class_information["data"]["class_scheduled_at"]:
-            logger.error(f"{request_id} - scheduled_at cannot be earlier than the current scheduled_at")
-            g.response_code = "0412"
-            return {}
-
         if model["scheduled_at"] < datetime.datetime.now():
             logger.error(f"{request_id} - scheduled_at cannot be in the past")
-            g.response_code = "0413"
+            g.response_code = "0412"
             return {}
 
     if "max_participants" in model:
@@ -242,7 +236,7 @@ def add_participant(class_id, user_id, request_id):
     if class_information["error"]:
         return {}
 
-    if class_information["data"] and datetime.datetime.fromisoformat(class_information["data"]["class_scheduled_at"]) <= datetime.datetime.now():
+    if class_information["data"] and class_information["data"]["class_status"] == "STARTED":
         logger.error(f"{request_id} - the class already started")
         g.response_code = "0410"
         return {}
@@ -258,26 +252,15 @@ def add_participant(class_id, user_id, request_id):
     if exists_participant["error"]:
         return {}
 
-    class_participants = ClassesRepository.get_class_participants(class_id=class_id,
-                                                                  request_id=request_id,
-                                                                  errors_code_map={"database_error_code": "0502"})
-    if class_participants["error"]:
-        return {}
-
-    if class_participants["data"] and (len(class_participants["data"]) >= class_information["data"]["max_participants"]):
-        logger.error(f"{request_id} - the class is full")
-        g.response_code = "0411"
-        return {}
-
     added_participant = ClassesRepository.add_class_participant(class_id=class_id,
                                                                 user_id=user_id,
                                                                 request_id=request_id,
-                                                                errors_code_map={"database_error_code": "0503"})
+                                                                errors_code_map={"database_error_code": "0502"})
 
     if added_participant["error"]:
         return {}
 
-    g.response_code = "0200"
+    g.response_code = "0201"
     return {}
 
 def cancel_participant(class_id, user_id, request_id):
@@ -306,7 +289,7 @@ def cancel_participant(class_id, user_id, request_id):
                                                        user_id=user_id,
                                                        request_id=request_id,
                                                        errors_code_map={
-                                                           "database_error_code": "0501",
+                                                           "database_error_code": "0502",
                                                            "invalid_data_error_code": "0406"
                                                        })
 
@@ -317,13 +300,13 @@ def cancel_participant(class_id, user_id, request_id):
     return {}
 
 def confirm_participant(class_id, user_id, request_id):
-    exists_class = ClassesRepository.check_if_class_exists(class_id=class_id,
-                                                           request_id=request_id,
-                                                           errors_code_map={
-                                                               "database_error_code": "0500",
-                                                               "invalid_data_error_code": "0404"
-                                                           })
-    if exists_class["error"]:
+    class_information = ClassesUtils.check_and_get_class_information(class_id=class_id,
+                                                                     request_id=request_id,
+                                                                     errors_code_map={
+                                                                         "database_error_code": "0500",
+                                                                         "invalid_data_error_code": "0404"
+                                                                     })
+    if class_information["error"]:
         return {}
 
     exists_participant = ClassesRepository.check_if_participant_exists(class_id=class_id,
@@ -337,11 +320,22 @@ def confirm_participant(class_id, user_id, request_id):
     if exists_participant["error"]:
         return {}
 
+    class_participants = ClassesRepository.get_class_participants(class_id=class_id,
+                                                                  request_id=request_id,
+                                                                  errors_code_map={"database_error_code": "0502"})
+    if class_participants["error"]:
+        return {}
+
+    if class_participants["data"] and (len(class_participants["data"]) >= class_information["data"]["max_participants"]):
+        logger.error(f"{request_id} - the class is full")
+        g.response_code = "0411"
+        return {}
+
     confirm_user = ClassesRepository.confirm_participant(class_id=class_id,
                                                          user_id=user_id,
                                                          request_id=request_id,
                                                          errors_code_map={
-                                                             "database_error_code": "0501",
+                                                             "database_error_code": "0503",
                                                              "invalid_data_error_code": "0406"
                                                          })
 
@@ -357,7 +351,7 @@ def get_user_classes_history(user_id, since, until, request_id):
 
         if not since_date:
             logger.error(f"{request_id} - since date '{since}' is invalid")
-            g.response_code = "0400"
+            g.response_code = "0410"
             return {}
 
     if until:
@@ -365,12 +359,12 @@ def get_user_classes_history(user_id, since, until, request_id):
 
         if not until_date:
             logger.error(f"{request_id} - until date '{until}' is invalid")
-            g.response_code = "0400"
+            g.response_code = "0411"
             return {}
 
-        if since_date > until_date:
+        if since and since_date > until_date:
             logger.error(f"{request_id} - 'since' ({since}) cannot be later than 'until' ({until})")
-            g.response_code = "0400"
+            g.response_code = "0412"
             return {}
 
     data = {"since": since, "until": until}
@@ -384,7 +378,7 @@ def get_user_classes_history(user_id, since, until, request_id):
         return {}
 
     match_dates = " AND ".join(columns) if len(columns) else ""
-    logger.debug(f"{request_id} - dates to match: {match_dates or None}")
+    logger.debug(f"{request_id} - dates to match: {data}")
 
     history = ClassesRepository.get_user_classes_history(user_id=user_id,
                                                          columns=match_dates,
@@ -492,5 +486,50 @@ def cancel_class(class_id, user_id, request_id):
 
     g.send_push_notification_data = notification_data["data"]
     g.send_push_notification_users_token = users_to_notify["data"]
+    g.response_code = "0200"
+    return {}
+
+def check_in_participant(class_id, user_id, request_id):
+    class_information = ClassesUtils.check_and_get_class_information(class_id=class_id,
+                                                                     request_id=request_id,
+                                                                     errors_code_map={
+                                                                         "database_error_code": "0500",
+                                                                         "invalid_data_error_code": "0404"
+                                                                     })
+
+    if class_information["error"]:
+        return {}
+
+    if class_information["data"]["class_status"] not in ('STARTED', 'NOT STARTED'):
+        logger.error(f"{request_id} - this class is cancelled or finished")
+        g.response_code = "0410"
+        return {}
+
+    exists_participant = ClassesRepository.check_if_participant_exists(class_id=class_id,
+                                                                       user_id=user_id,
+                                                                       request_id=request_id,
+                                                                       errors_code_map={
+                                                                           "database_error_code": "0501",
+                                                                           "invalid_data_error_code": "0405",
+                                                                       })
+
+    if exists_participant["error"]:
+        return {}
+
+    if not exists_participant["data"]["participant_status"] == "CONFIRMED":
+        logger.error(f"{request_id} - this user cannot check-in because participant status is not 'CONFIRMED'")
+        g.response_code = "0411"
+        return {}
+
+    check_in_participant = ClassesRepository.check_in_participant(class_id=class_id,
+                                                                  user_id=user_id,
+                                                                  request_id=request_id,
+                                                                  errors_code_map={
+                                                                      "database_error_code": "0502",
+                                                                  })
+
+    if check_in_participant["error"]:
+        return {}
+
     g.response_code = "0200"
     return {}

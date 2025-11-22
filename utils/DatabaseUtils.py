@@ -1,6 +1,6 @@
-import psycopg2
-import psycopg2.extras
+import psycopg2, psycopg2.extras
 from functools import wraps
+
 from configs.ServerConfig import connection_pool, logger
 
 def with_db_connection(func):

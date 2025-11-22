@@ -5,6 +5,8 @@ services:
     restart: always
     ports:
       - "5000:5000"
+    environment:
+      - TZ=America/Argentina/Buenos_Aires
     depends_on:
       database:
         condition: service_healthy
@@ -27,6 +29,7 @@ services:
       - POSTGRES_USER=postgres
       - POSTGRES_PASSWORD=postgres
       - POSTGRES_DB=excuses404
+      - TZ=America/Argentina/Buenos_Aires
     volumes:
       - postgres_data:/var/lib/postgresql
       - ./.initdb:/docker-entrypoint-initdb.d:ro

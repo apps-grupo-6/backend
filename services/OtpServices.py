@@ -1,6 +1,6 @@
 from flask import g
-
 from configs.ServerConfig import logger
+
 from repositories import OtpRepository, UsersRepository
 from utils import OtpUtils, UsersUtils
 
@@ -47,7 +47,7 @@ def create_otp(model, request_id):
                                         request_id=request_id,
                                         errors_code_map={"database_error_code": "0502"})
 
-    g.response_code = "0200"
+    g.response_code = "0201"
     return {}
 
 def resend_otp(model, request_id):
@@ -150,5 +150,5 @@ def delete_otp(otp_token_id, request_id):
     if deleted["error"]:
         return {}
 
-    g.response_code = "0200"
+    g.response_code = "0204"
     return {}

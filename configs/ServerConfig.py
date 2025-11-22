@@ -86,15 +86,6 @@ enabled = [
     if config.has_option(section, 'enabled')
 ]
 
-#run_check = [
-#    f"auth={config.get('Auth', 'enabled')}",
-#    f"users={config.get('Users', 'enabled')}",
-#    f"otp={config.get('Otp', 'enabled')}",
-#    f"classes={config.get('Classes', 'enabled')}",
-#    f"locations={config.get('Locations', 'enabled')}",
-#    f"notifications={config.get('Notifications', 'enabled')}"
-#]
-
 # -1 = database error when trying to check if user exists in our database
 # 9998 = user is banned
 # 9999 = security breach

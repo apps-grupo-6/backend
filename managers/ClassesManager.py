@@ -371,7 +371,7 @@ def confirm_participant(final_response, conn, cursor, user_id, class_id, request
 def does_participant_exist(final_response, conn, cursor, class_id, user_id, request_id):
     try:
         query = """
-            SELECT 1
+            SELECT status as participant_status
             FROM class_participants
             WHERE 
                 class_id = %s
@@ -414,7 +414,7 @@ def get_user_classes_history(final_response, conn, cursor, user_id, columns, col
             JOIN locations l ON c.location_id = l.id
             WHERE
                 cp.user_id = %s
-                AND c.scheduled_at < NOW()
+                AND (c.scheduled_at < NOW() OR c.status IN ('CANCELLED', 'FINISHED'))
         """
 
         values = (user_id,)
@@ -463,6 +463,28 @@ def cancel_class(final_response, conn, cursor, class_id, request_id):
             WHERE id = %s
         """
         values = (class_id,)
+
+        cursor.execute(query, values)
+        conn.commit()
+    except:
+        logger.exception(f"{request_id} - an error occurred while trying to cancel this class")
+        final_response["ok"] = False
+
+    return final_response
+
+@DatabaseUtils.with_db_connection
+def check_in_participant(final_response, conn, cursor, class_id, user_id, request_id):
+    try:
+        query = """
+            UPDATE class_participants 
+            SET 
+                updated_at = NOW(),
+                status = 'CHECKED IN'
+            WHERE 
+                class_id = %s
+                AND user_id = %s
+        """
+        values = (class_id, user_id)
 
         cursor.execute(query, values)
         conn.commit()

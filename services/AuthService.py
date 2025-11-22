@@ -7,7 +7,6 @@ from utils import UsersUtils, AuthUtils
 from configs import AuthConfig
 from repositories import AuthRepository, UsersRepository
 
-
 def login(model, request_id):
     username = model["username"]
     password = model["password"]
@@ -51,48 +50,43 @@ def login(model, request_id):
         return {}
 
     roles = get_user_info['data']['roles']
-    token = AuthUtils.generate_jwt_token(user_id=user_id, request_id=request_id)
+    token = AuthUtils.generate_jwt_token(user_id=user_id, roles=roles, request_id=request_id)
     g.response_code = "0200"
     return {
         "data": {
-            "token": token,
-            "roles": roles,
-            "user_id": user_id
+            "token": token
         }
     }
 
-def refresh_token(model, request_id):
-    jwt_token = model["jwt_token"]
-
+def refresh_token(user_id, request_id):
     logger.info(f"{request_id} - checking if needed to refresh jwt token...")
-    decoded = AuthUtils.check_jwt_token(jwt_token)
+    decoded = AuthUtils.check_jwt_token()
+    temp_response_code = "0200"
 
     if decoded["error"]:
-        if decoded["error_code"] == 0:
-            logger.error(f"{request_id} - the requested jwt token is valid and did not expire yet")
-            g.response_code = "0410"
-        else:
+        if not decoded["error_code"] == 0:
             logger.error(f"{request_id} - the requested jwt token is invalid")
-            g.response_code = "0411"
+            g.response_code = "0410"
+            return {}
+        else:
+            logger.debug(f"{request_id} - the requested jwt token is valid and did not expire yet")
+            temp_response_code = "0201"
 
-        return {}
     else:
-        logger.debug(f"{g.request_id} - jwt token is expired (ok)")
+        logger.debug(f"{request_id} - jwt token is expired (ok)")
 
-    decoded["data"]["exp"] += AuthConfig.jwt_exp_delta_seconds
-    refreshed = jwt.encode(decoded, AuthConfig.jwt_secret, algorithm=AuthConfig.jwt_algorithm)
-
-    last_login = AuthRepository.update_user_last_login(user_id=decoded["data"]["user_id"],
+    last_login = AuthRepository.update_user_last_login(user_id=user_id,
                                                        request_id=request_id,
                                                        errors_code_map={"database_error_code": "0500"})
 
     if last_login["error"]:
         return {}
 
-    g.response_code = "0200"
+    token = AuthUtils.generate_jwt_token(user_id=user_id, roles=decoded["data"]["roles"], request_id=request_id)
+    g.response_code = temp_response_code
     return {
         "data": {
-            "token": refreshed
+            "token": token
         }
     }
 
@@ -169,5 +163,10 @@ def confirm_account(model, request_id):
     if verified["error"]:
         return {}
 
+    g.response_code = "0200"
+    return {}
+
+def logout(user_id, request_id):
+    logger.info(f"{request_id} - user '{user_id}' logged out successfully...")
     g.response_code = "0200"
     return {}

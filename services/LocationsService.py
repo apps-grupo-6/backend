@@ -2,7 +2,6 @@ from flask import g
 
 from repositories import UsersRepository, LocationsRepository
 
-
 def create_location(model, user_id, request_id):
     country_code = model['country_code']
     city = model['city']
@@ -34,7 +33,7 @@ def create_location(model, user_id, request_id):
     if created["error"]:
         return {}
 
-    g.response_code = "0200"
+    g.response_code = "0201"
     return {}
 
 def get_all_locations(request_id):
