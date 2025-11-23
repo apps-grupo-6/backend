@@ -82,7 +82,7 @@ def create_class(qr, professor_id, location_id, discipline_id, scheduled_at,
         logger.critical(f"{request_id} - an error occurred while creating class")
         return {"flag": -1}
 
-    logger.debug(f"{request_id} - class created successfully")
+    logger.debug(f"{request_id} - class created successfully with id '{created['data']}'")
     return {"flag": 1}
 
 @ServerUtils.set_final_response

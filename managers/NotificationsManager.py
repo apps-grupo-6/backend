@@ -40,3 +40,22 @@ def get_class_participants_token(final_response, conn, cursor, class_id, request
         final_response["ok"] = False
 
     return final_response
+
+@DatabaseUtils.with_db_connection
+def get_user_token(final_response, conn, cursor, user_id, request_id):
+    try:
+        query = """
+            SELECT upt.expo_push_token
+            FROM user_push_tokens upt
+            WHERE upt.user_id = %s
+            LIMIT 1;
+        """
+        values = (user_id,)
+
+        cursor.execute(query, values)
+        final_response["data"] = cursor.fetchone()
+    except:
+        logger.exception(f"{request_id} - an error occurred while setting user expo token")
+        final_response["ok"] = False
+
+    return final_response

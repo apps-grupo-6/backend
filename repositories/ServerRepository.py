@@ -32,7 +32,6 @@ def set_user_as_suspect(user_id, request_id):
     set_user = ServerManager.set_user_as_suspect(user_id=user_id, request_id=request_id)
     if not set_user["ok"]:
         logger.critical(f"{request_id} - an error occurred while setting the user as suspect")
-        logger.info(f"request data: {request_id=} | {user_id=}")
     else:
         logger.debug(f"{request_id} - user set as suspect successfully")
 
@@ -42,7 +41,6 @@ def set_user_as_banned(user_id, request_id):
     set_user = ServerManager.set_user_as_banned(user_id=user_id, request_id=request_id)
     if not set_user["ok"]:
         logger.critical(f"{request_id} - an error occurred while trying to ban this user")
-        logger.info(f"request data: {request_id=} | {user_id=}")
     else:
         logger.debug(f"{request_id} - user banned successfully")
 
@@ -59,3 +57,12 @@ def delete_expired_otp_tokens():
             logger.debug(f"{rows_affected} otp_tokens were deleted successfully")
         else:
             logger.debug("all otp_tokens in our database are active")
+
+def reset_force_disconnect(user_id, request_id):
+    logger.info(f"{request_id} - resetting force disconnect...")
+
+    reset_disconnect = ServerManager.reset_user_force_disconnect(user_id=user_id, request_id=request_id)
+    if not reset_disconnect["ok"]:
+        logger.critical(f"{request_id} - an error occurred while trying to reset force disconnect this user")
+    else:
+        logger.debug(f"{request_id} - forced disconnect flag was rested successfully")

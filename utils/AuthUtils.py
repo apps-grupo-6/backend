@@ -60,6 +60,11 @@ def validate_session(func):
             if user_data["suspect"]: #if user was flagged as suspect
                 logger.warning(f"{g.request_id} - user_id '{user_id}' was flagged as suspect")
 
+            if user_data["forced_disconnect"]:
+                logger.warning(f"{g.request_id} - a forcibly disconnection was detected for this user")
+                g.response_code = '9997'
+                return {"code": "0403", "description": "the request could not be processed due to user_id was forcibly disconnected"}, 403
+
             if str_user_id not in ServerUtils.BACKEND_DEVELOPERS:
                 user_permissions = user_data["permissions"]
                 check_endpoint = f"{g.method}-{g.endpoint}"

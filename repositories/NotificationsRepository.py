@@ -6,7 +6,6 @@ from managers import NotificationsManager
 @ServerUtils.set_final_response
 def set_user_token(user_id, expo_push_token, request_id, errors_code_map):
     logger.info(f"{request_id} - saving expo_push_token for user_id '{user_id}'...")
-
     expo_push_token_saved = NotificationsManager.set_user_token(expo_push_token=expo_push_token,
                                                                 user_id=user_id,
                                                                 request_id=request_id)
@@ -21,7 +20,6 @@ def set_user_token(user_id, expo_push_token, request_id, errors_code_map):
 @ServerUtils.set_final_response
 def get_class_participants_token(class_id, request_id, errors_code_map):
     logger.info(f"{request_id} - retrieving all expo_push_token for class_id '{class_id}'...")
-
     expo_push_tokens = NotificationsManager.get_class_participants_token(class_id=class_id, request_id=request_id)
 
     if not expo_push_tokens["ok"]:

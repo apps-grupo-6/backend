@@ -4,7 +4,6 @@ from flask import g
 from configs.ServerConfig import logger
 
 from utils import UsersUtils, AuthUtils
-from configs import AuthConfig
 from repositories import AuthRepository, UsersRepository
 
 def login(model, request_id):

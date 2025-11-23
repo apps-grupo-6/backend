@@ -5,6 +5,7 @@ from flask import g, request
 from configs.ServerConfig import logger
 
 from connectors import ServerConnector
+from managers import NotificationsManager
 from repositories import ServerRepository
 from templates import ServerTemplates, UserTemplate
 
@@ -148,3 +149,25 @@ def send_email_account_blocked(user_data):
 
     logger.info(f"{g.request_id} - notifying user being banned...")
     ServerConnector.send_email(email=email, request_id=g.request_id)
+
+def send_push_notification_account_blocked(user_data):
+    final_response = {
+        "data": {
+            "title": "",
+            "body": "",
+            "categoryId": "",
+            "data": {}
+        }
+    }
+
+    user_information = user_data["information"]
+    logger.info(f"{g.request_id} - generating ban push notification for user_id '{g.user_id}'...")
+
+    final_response["data"]["title"] = f"Tu cuenta ha sido bloqueada"
+    final_response["data"]["body"] = f"La cuenta {user_information['username']} ha sido bloqueada automáticamente por motivos internos de seguridad. Si crees que es un error, contacta al soporte."
+
+    users_to_notify = NotificationsManager.get_user_token(user_id=g.user_id, request_id=g.request_id)
+    g.send_push_notification_data = final_response["data"]
+    g.send_push_notification_users_token = [users_to_notify["data"]["expo_push_token"]]
+
+    logger.info(users_to_notify)

@@ -3,7 +3,7 @@ import datetime
 from flask import g
 from configs.ServerConfig import logger
 
-from repositories import ClassesRepository, UsersRepository, LocationsRepository, DisciplinesRepository, NotificationsRepository
+from repositories import ClassesRepository, UsersRepository, LocationsRepository, DisciplinesRepository
 from utils import ClassesUtils, NotificationsUtils
 
 def get_all_classes(request_id):
@@ -115,7 +115,7 @@ def get_class(class_id, request_id):
     }
 
 def update_class(model, class_id, user_id, request_id):
-    qr = model["qr"]
+    rescheduled_class = False
 
     class_information = ClassesUtils.check_and_get_class_information(class_id=class_id,
                                                                      request_id=request_id,
@@ -149,7 +149,9 @@ def update_class(model, class_id, user_id, request_id):
         return {}
 
     if "scheduled_at" in model:
-        if model["scheduled_at"] < datetime.datetime.now():
+        rescheduled_class = True
+
+        if datetime.datetime.fromisoformat(model["scheduled_at"]) < datetime.datetime.now():
             logger.error(f"{request_id} - scheduled_at cannot be in the past")
             g.response_code = "0412"
             return {}
@@ -157,7 +159,7 @@ def update_class(model, class_id, user_id, request_id):
     if "max_participants" in model:
         participants = ClassesRepository.get_class_participants(class_id=class_id,
                                                                 request_id=request_id,
-                                                                errors_code_map={"database_error_code": "0504"})
+                                                                errors_code_map={"database_error_code": "0501"})
 
         if participants["error"]:
             return {}
@@ -167,10 +169,11 @@ def update_class(model, class_id, user_id, request_id):
             g.response_code = "0414"
             return {}
 
-    if class_information["data"]["qr"] == qr:
-        logger.error(f"{request_id} - sent qr is equal to actual class qr (if equal, there's no new data)")
-        g.response_code = "0411"
-        return {}
+    if "max_participants" in model:
+        if class_information["data"]["qr"] == model["qr"]:
+            logger.error(f"{request_id} - sent qr is equal to actual class qr (if equal, there's no new data)")
+            g.response_code = "0411"
+            return {}
 
     update_columns = ", ".join(columns)
     values.append(class_id)
@@ -178,10 +181,24 @@ def update_class(model, class_id, user_id, request_id):
     updated = ClassesRepository.update_class(update_columns=update_columns,
                                              update_values=values,
                                              request_id=request_id,
-                                             errors_code_map={"database_error_code": "0505"})
+                                             errors_code_map={"database_error_code": "0502"})
 
     if updated["error"]:
         return {}
+
+    if rescheduled_class:
+        notification = NotificationsUtils.set_notifications_push(notification_type="CLASS_RESCHEDULED",
+                                                                 class_id=class_id,
+                                                                 class_information=class_information,
+                                                                 request_id=request_id,
+                                                                 errors_code_map={
+                                                                     "invalid_data_error_code": "0201",
+                                                                     "database_error_code": "0503"
+                                                                 })
+
+
+        if notification["error"]:
+            return {}
 
     g.response_code = "0200"
     return {}
@@ -327,7 +344,7 @@ def confirm_participant(class_id, user_id, request_id):
     if class_participants["error"]:
         return {}
 
-    if class_participants["data"] and (len(class_participants["data"]) >= class_information["data"]["max_participants"]):
+    if class_participants["data"] and (len(class_participants["data"]) >= class_information["data"]["class_max_participants"]):
         logger.error(f"{request_id} - the class is full")
         g.response_code = "0411"
         return {}
@@ -420,9 +437,7 @@ def start_class(class_id, user_id, request_id):
 
     ClassesRepository.start_class(class_id=class_id,
                                   request_id=request_id,
-                                  errors_code_map={
-                                      "database_error_code": "0501",
-                                  })
+                                  errors_code_map={"database_error_code": "0501"})
 
     g.response_code = "0200"
     return {}
@@ -456,37 +471,25 @@ def cancel_class(class_id, user_id, request_id):
         return {}
 
     cancelled_class = ClassesRepository.cancel_class(class_id=class_id,
-                                                    request_id=request_id,
-                                                    errors_code_map={"database_error_code": "0501"})
+                                                     request_id=request_id,
+                                                     errors_code_map={"database_error_code": "0501"})
 
     if cancelled_class["error"]:
         return {}
 
-    notification_type = "CLASS_CANCELLED"
-    notification_data = NotificationsUtils.generate_notification_data(notification_type=notification_type,
-                                                                      class_id=class_id,
-                                                                      class_information=class_information,
-                                                                      request_id=request_id,
-                                                                      errors_code_map={
-                                                                          "invalid_data_error_code": "0405",
-                                                                          "database_error_code": "0502"
-                                                                      })
+    notification = NotificationsUtils.set_notifications_push(notification_type="CLASS_CANCELLED",
+                                                             class_id=class_id,
+                                                             class_information=class_information,
+                                                             request_id=request_id,
+                                                             errors_code_map={
+                                                                 "invalid_data_error_code": "0201",
+                                                                 "database_error_code": "0502"
+                                                             })
 
-    if notification_data["error"]:
+
+    if notification["error"]:
         return {}
 
-    users_to_notify = NotificationsRepository.get_class_participants_token(class_id=class_id,
-                                                                           request_id=request_id,
-                                                                           errors_code_map={
-                                                                               "invalid_data_error_code": "0201",
-                                                                               "database_error_code": "0503"
-                                                                           })
-
-    if users_to_notify["error"]:
-        return {}
-
-    g.send_push_notification_data = notification_data["data"]
-    g.send_push_notification_users_token = users_to_notify["data"]
     g.response_code = "0200"
     return {}
 

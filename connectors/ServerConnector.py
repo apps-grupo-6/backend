@@ -42,20 +42,18 @@ def send_email(email, request_id):
     except ApiException:
         logger.exception(f"{request_id} - an error occurred while trying to sending email")
 
-def send_push_notification(expo_push_token, title, body, request_id):
+def send_push_notification(expo_push_token, data, request_id):
     message = {
         "to": expo_push_token,
         "sound": "default",
-        "title": title,
-        "body": body,
-        "data": {},
+        "title": data["title"],
+        "body": data["body"],
+        "data": data["data"],
+        "categoryId": data["categoryId"] if "categoryId" in data else None,
     }
 
     try:
         resp = requests.post("https://exp.host/--/api/v2/push/send", json=message, timeout=5)
-
-        logger.info(
-            f"{request_id} - expo push response: {resp.status_code} {resp.text}"
-        )
+        logger.info(f"{request_id} - expo push response: {resp.status_code} {resp.text}")
     except:
         logger.exception(f"{request_id} - an error occurred while trying to sending push notification")

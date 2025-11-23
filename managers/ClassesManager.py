@@ -34,11 +34,14 @@ def create_class(final_response, conn, cursor, professor_id, location_id, discip
         query = """
             INSERT INTO classes (professor_id, location_id, discipline_id, scheduled_at, max_participants, qr, created_at)
             VALUES (%s, %s, %s, %s, %s, %s, NOW())
+            RETURNING id
         """
         values = (professor_id, location_id, discipline_id, scheduled_at, max_participants, qr)
 
         cursor.execute(query, values)
+        new_id = cursor.fetchone()[0]
         conn.commit()
+        final_response["data"] = new_id
     except:
         logger.exception(f"{request_id} - an error occurred while creating the class")
         final_response["ok"] = False
@@ -119,6 +122,7 @@ def get_class_information(final_response, conn, cursor, class_id, request_id):
                 d.name as class_discipline_name,
                 to_char(c.scheduled_at, 'YYYY-MM-DD HH24:MI:SS') as class_scheduled_at,
                 c.max_participants as class_max_participants,
+                (c.max_participants - COUNT(cp.id) FILTER (WHERE cp.status IN ('CONFIRMED', 'CHECKED IN'))) AS participants_checked_in_amount,
                 c.status as class_status,
                 to_char(c.ended_at, 'YYYY-MM-DD HH24:MI:SS') as class_ended_at,
                 c.qr as class_qr,
@@ -128,10 +132,10 @@ def get_class_information(final_response, conn, cursor, class_id, request_id):
                         json_build_object(
                             'participant_id', cp.id,
                             'participant_user_id', cp.user_id,
-                            'participant_added_at', cp.added_at,
+                            'participant_added_at', to_char(cp.added_at, 'YYYY-MM-DD HH24:MI:SS'),
                             'participant_status', cp.status,
-                            'participant_confirmed_at', cp.confirmed_at,
-                            'participant_updated_at', cp.updated_at
+                            'participant_confirmed_at', to_char(cp.confirmed_at, 'YYYY-MM-DD HH24:MI:SS'),
+                            'participant_updated_at', to_char(cp.updated_at, 'YYYY-MM-DD HH24:MI:SS')
                         )
                     ) FILTER (WHERE cp.id IS NOT NULL),  '[]'
                 ) AS participants
@@ -176,6 +180,7 @@ def get_all_classes(final_response, conn, cursor, request_id):
                 d.name as class_discipline_name,
                 to_char(c.scheduled_at, 'YYYY-MM-DD HH24:MI:SS') as class_scheduled_at,
                 c.max_participants as class_max_participants,
+                (c.max_participants - COUNT(cp.id) FILTER (WHERE cp.status IN ('CONFIRMED', 'CHECKED IN'))) AS participants_checked_in_amount,
                 c.status as class_status,
                 to_char(c.ended_at, 'YYYY-MM-DD HH24:MI:SS') as class_ended_at,
                 c.qr as class_qr,
@@ -185,10 +190,10 @@ def get_all_classes(final_response, conn, cursor, request_id):
                         json_build_object(
                             'participant_id', cp.id,
                             'participant_user_id', cp.user_id,
-                            'participant_added_at', cp.added_at,
+                            'participant_added_at', to_char(cp.added_at, 'YYYY-MM-DD HH24:MI:SS'),
                             'participant_status', cp.status,
-                            'participant_confirmed_at', cp.confirmed_at,
-                            'participant_updated_at', cp.updated_at
+                            'participant_confirmed_at', to_char(cp.confirmed_at, 'YYYY-MM-DD HH24:MI:SS'),
+                            'participant_updated_at', to_char(cp.updated_at, 'YYYY-MM-DD HH24:MI:SS')
                         )
                     ) FILTER (WHERE cp.id IS NOT NULL),  '[]'
                 ) AS participants
@@ -267,6 +272,7 @@ def get_user_upcoming_classes(final_response, conn, cursor, user_id, request_id)
                 ui.first_name AS professor_first_name,
                 ui.last_name AS professor_last_name,
                 to_char(c.scheduled_at, 'YYYY-MM-DD HH24:MI:SS') as class_scheduled_at,
+                d.name as class_discipline_name,
                 cp.status AS participant_status,
                 to_char(cp.confirmed_at, 'YYYY-MM-DD HH24:MI:SS') as participant_confirmed_at,
                 to_char(cp.added_at, 'YYYY-MM-DD HH24:MI:SS') as participant_added_at,
@@ -274,6 +280,7 @@ def get_user_upcoming_classes(final_response, conn, cursor, user_id, request_id)
             FROM class_participants cp
             JOIN classes c ON c.id = cp.class_id
             JOIN user_information ui ON c.professor_id = ui.user_id
+            LEFT JOIN disciplines d ON c.discipline_id = d.id
             WHERE
                 cp.user_id = %s
                 AND c.ended_at IS NULL
@@ -404,6 +411,7 @@ def get_user_classes_history(final_response, conn, cursor, user_id, columns, col
                 l.city AS gym_city,
                 l.address AS gym_address,
                 l.name AS gym_name,
+                d.name as class_discipline_name,
                 CASE
                     WHEN c.ended_at IS NOT NULL THEN (c.ended_at - c.scheduled_at)::TEXT
                     ELSE NULL
@@ -412,6 +420,7 @@ def get_user_classes_history(final_response, conn, cursor, user_id, columns, col
             JOIN classes c ON c.id = cp.class_id
             JOIN user_information ui ON c.professor_id = ui.user_id
             JOIN locations l ON c.location_id = l.id
+            LEFT JOIN disciplines d ON c.discipline_id = d.id
             WHERE
                 cp.user_id = %s
                 AND (c.scheduled_at < NOW() OR c.status IN ('CANCELLED', 'FINISHED'))

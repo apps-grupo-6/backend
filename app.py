@@ -64,16 +64,20 @@ def after_request(response):
     if g.send_email_data:
         ServerConnector.send_email(email=g.send_email_data, request_id=g.request_id)
 
-    if g.alert_description:
-        if g.response_code == "9999" and g.user_data:#if there was a security breach amd user data was retrieved from cache or exists in our database at least
-            if g.user_data["suspect"]:
-                ServerRepository.set_user_as_banned(user_id=g.user_id, request_id=g.request_id)
-                ServerUtils.send_email_account_blocked(g.user_data)
-            else:
-                ServerRepository.set_user_as_suspect(user_id=g.user_id, request_id=g.request_id)
+    if g.response_code in ("9997", "9999") and g.user_data:
+        if g.alert_description and g.response_code == "9999":
+            ServerUtils.send_email_alert_backend() # notifies backend developers to check this alert
+        elif g.response_code == "9997":
+            ServerRepository.reset_force_disconnect(user_id=g.user_id, request_id=g.request_id)
+
+        if g.user_data["suspect"]:
+            ServerRepository.set_user_as_banned(user_id=g.user_id, request_id=g.request_id)
+            ServerUtils.send_email_account_blocked(g.user_data)
+            ServerUtils.send_push_notification_account_blocked(g.user_data)
+        else:
+            ServerRepository.set_user_as_suspect(user_id=g.user_id, request_id=g.request_id)
 
         ServerUtils.get_users() # forces to reload users cache to update user status if banned or flagged as suspect
-        ServerUtils.send_email_alert_backend() # notifies backend developers to check this alert
 
     if g.send_push_notification_data and g.send_push_notification_users_token:
         length = len(g.send_push_notification_users_token)
@@ -81,8 +85,7 @@ def after_request(response):
         logger.debug(f"{g.request_id} - sending {length} push notifications...")
         for token in g.send_push_notification_users_token:
             ServerConnector.send_push_notification(expo_push_token=token,
-                                                   title=g.send_push_notification_data["title"],
-                                                   body=g.send_push_notification_data["body"],
+                                                   data=g.send_push_notification_data,
                                                    request_id=g.request_id)
 
     if response.content_type == 'application/json':

@@ -42,6 +42,7 @@ def get_all_locations(final_response, conn, cursor, request_id):
     try:
         query = """
             SELECT 
+                l.id as gym_id,
                 ui.first_name || ' ' || ui.last_name AS owner_name,
                 l.name AS gym_name,
                 l.lat AS gym_latitude,

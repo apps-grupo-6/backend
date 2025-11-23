@@ -126,3 +126,23 @@ def delete_expired_otp_tokens(final_response, conn, cursor):
         final_response["ok"] = False
 
     return final_response
+
+@DatabaseUtils.with_db_connection
+def reset_user_force_disconnect(final_response, conn, cursor, user_id, request_id):
+    try:
+        query = """
+            UPDATE user_controls
+            SET 
+                force_disconnect = FALSE,
+                disconnect_request_id = %s
+            WHERE user_id = %s
+        """
+        values = (request_id, user_id)
+
+        cursor.execute(query, values)
+        conn.commit()
+    except:
+        logger.exception(f"{request_id} - an error occurred while banning this user")
+        final_response["ok"] = False
+
+    return final_response

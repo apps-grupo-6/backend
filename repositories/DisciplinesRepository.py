@@ -2,7 +2,6 @@ from managers import DisciplinesManager
 from configs.ServerConfig import logger
 from utils import ServerUtils
 
-
 @ServerUtils.set_final_response
 def check_if_discipline_exists(discipline_id, request_id, errors_code_map):
     logger.info(f"{request_id} - checking if discipline_id '{discipline_id}' exists...")

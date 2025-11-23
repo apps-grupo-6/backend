@@ -87,6 +87,7 @@ enabled = [
 ]
 
 # -1 = database error when trying to check if user exists in our database
+# 9997 = user was forcibly disconnected
 # 9998 = user is banned
 # 9999 = security breach
-special_errors_code_map = ("-1", "9998", "9999")
+special_errors_code_map = ("-1", "9997", "9998", "9999")

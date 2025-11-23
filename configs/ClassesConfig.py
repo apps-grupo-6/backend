@@ -58,6 +58,7 @@ get_class_code_map = {
 
 update_class_code_map = {
     "0200": ("ok", 200),
+    "0201": ("ok", 200),
     "0400": ("bad request", 400),
     "0404": ("invalid class_id", 404),
     "0405": ("invalid user_id", 404),
@@ -71,9 +72,7 @@ update_class_code_map = {
     "0500": ("the request could not be processed", 500),
     "0501": ("the request could not be processed", 500),
     "0502": ("the request could not be processed", 500),
-    "0503": ("the request could not be processed", 500),
-    "0504": ("the request could not be processed", 500),
-    "0505": ("the request could not be processed", 500)
+    "0503": ("the request could not be processed", 500)
 }
 
 finish_class_code_map = {
