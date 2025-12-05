@@ -269,6 +269,7 @@ def get_user_upcoming_classes(final_response, conn, cursor, user_id, request_id)
         query = """
             SELECT
                 c.id AS class_id,
+                c.location_id AS gym_id,
                 ui.first_name AS professor_first_name,
                 ui.last_name AS professor_last_name,
                 to_char(c.scheduled_at, 'YYYY-MM-DD HH24:MI:SS') as class_scheduled_at,
